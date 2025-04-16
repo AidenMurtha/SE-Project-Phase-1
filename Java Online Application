@@ -1,0 +1,216 @@
+package MBS;
+
+//Java GUI + Core Logic: Movie Ticket Purchasing App (continued with Account, Cart, Movie, Payment, Admin)
+
+import javax.swing.*;
+import javax.swing.SwingUtilities;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+
+public class MovieApp {
+ public static void main(String[] args) {
+     SwingUtilities.invokeLater(() -> new LoginScreen());
+ }
+}
+
+//Simple In-Memory Store
+class Database {
+ static Map<String, Account> accounts = new HashMap<>();
+ static List<Movie> movies = new ArrayList<>();
+ static Map<String, Cart> carts = new HashMap<>();
+
+ static {
+     // Sample movie entries
+     movies.add(new Movie("Inception", "Nolan", 1900, "7:00PM", 8.8f, 15.0f));
+     movies.add(new Movie("The Matrix", "Wachowskis", 1901, "9:00PM", 9.0f, 12.0f));
+ }
+}
+
+class Account {
+ String email, password, location;
+ int id;
+ String phone;
+
+ public Account(String email, String password) {
+     this.email = email;
+     this.password = password;
+     this.id = new Random().nextInt(10000);
+ }
+
+ public Cart getCart() {
+     return Database.carts.computeIfAbsent(email, k -> new Cart(email));
+ }
+}
+
+class Cart {
+ String accountEmail;
+ List<Movie> items = new ArrayList<>();
+
+ public Cart(String email) {
+     this.accountEmail = email;
+ }
+
+ public void addToCart(Movie m) {
+     items.add(m);
+ }
+
+ public float getTotal() {
+     return (float) items.stream().mapToDouble(m -> m.cost).sum();
+ }
+}
+
+class Movie {
+ String title, director, showtime;
+ int movieId;
+ float avgReview, cost;
+
+ public Movie(String title, String director, int movieId, String showtime, float avgReview, float cost) {
+     this.title = title;
+     this.director = director;
+     this.movieId = movieId;
+     this.showtime = showtime;
+     this.avgReview = avgReview;
+     this.cost = cost;
+ }
+
+ public String toString() {
+     return title + " - " + showtime + " ($" + cost + ")";
+ }
+}
+
+class Payment {
+ public static boolean makeCardPayment(String accountEmail, float total) {
+     System.out.println("Charging $" + total + " to card for " + accountEmail);
+     return true;
+ }
+
+ public static boolean makePayPalPayment(String accountEmail, float total) {
+     System.out.println("Processing PayPal $" + total + " for " + accountEmail);
+     return true;
+ }
+
+ public static boolean makeVenmoPayment(String accountEmail, float total) {
+     System.out.println("Processing Venmo $" + total + " for " + accountEmail);
+     return true;
+ }
+}
+
+class Admin {
+ static String adminUser = "admin";
+ static String adminPass = "admin123";
+
+ public static boolean login(String user, String pass) {
+     return user.equals(adminUser) && pass.equals(adminPass);
+ }
+
+ public static void addMovie(Movie m) {
+     Database.movies.add(m);
+ }
+}
+
+class LoginScreen extends JFrame {
+ JTextField emailField;
+ JPasswordField passwordField;
+
+ public LoginScreen() {
+     setTitle("Movie App Login");
+     setSize(300, 200);
+     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+     setLocationRelativeTo(null);
+
+     JPanel panel = new JPanel(new GridLayout(3, 2));
+     panel.add(new JLabel("Email:"));
+     emailField = new JTextField();
+     panel.add(emailField);
+
+     panel.add(new JLabel("Password:"));
+     passwordField = new JPasswordField();
+     panel.add(passwordField);
+
+     JButton loginBtn = new JButton("Login");
+     loginBtn.addActionListener(e -> login());
+     panel.add(loginBtn);
+
+     JButton signupBtn = new JButton("Sign Up");
+     signupBtn.addActionListener(e -> signup());
+     panel.add(signupBtn);
+
+     add(panel);
+     setVisible(true);
+ }
+
+ private void login() {
+     String email = emailField.getText();
+     String pass = new String(passwordField.getPassword());
+     Account user = Database.accounts.get(email);
+     if (user != null && user.password.equals(pass)) {
+         dispose();
+         new MainScreen(user);
+     } else {
+         JOptionPane.showMessageDialog(this, "Invalid login.");
+     }
+ }
+
+ private void signup() {
+     String email = emailField.getText();
+     String pass = new String(passwordField.getPassword());
+     if (!Database.accounts.containsKey(email)) {
+         Database.accounts.put(email, new Account(email, pass));
+         JOptionPane.showMessageDialog(this, "Account created. You can now login.");
+     } else {
+         JOptionPane.showMessageDialog(this, "Account already exists.");
+     }
+ }
+}
+
+class MainScreen extends JFrame {
+ Account account;
+ DefaultListModel<Movie> movieListModel = new DefaultListModel<>();
+ JList<Movie> movieList;
+
+ public MainScreen(Account account) {
+     this.account = account;
+
+     setTitle("Welcome " + account.email);
+     setSize(600, 400);
+     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+     setLocationRelativeTo(null);
+
+     for (Movie m : Database.movies) {
+         movieListModel.addElement(m);
+     }
+
+     movieList = new JList<>(movieListModel);
+     add(new JScrollPane(movieList), BorderLayout.CENTER);
+
+     JPanel bottom = new JPanel();
+     JButton addToCart = new JButton("Add to Cart");
+     JButton payWithCard = new JButton("Pay with Card");
+     JButton payWithPayPal = new JButton("Pay with PayPal");
+     JButton payWithVenmo = new JButton("Pay with Venmo");
+
+     addToCart.addActionListener(e -> {
+         Movie selected = movieList.getSelectedValue();
+         if (selected != null) {
+             account.getCart().addToCart(selected);
+             JOptionPane.showMessageDialog(this, selected.title + " added to cart.");
+         }
+     });
+
+     payWithCard.addActionListener(e -> Payment.makeCardPayment(account.email, account.getCart().getTotal()));
+     payWithPayPal.addActionListener(e -> Payment.makePayPalPayment(account.email, account.getCart().getTotal()));
+     payWithVenmo.addActionListener(e -> Payment.makeVenmoPayment(account.email, account.getCart().getTotal()));
+
+     bottom.add(addToCart);
+     bottom.add(payWithCard);
+     bottom.add(payWithPayPal);
+     bottom.add(payWithVenmo);
+
+     add(bottom, BorderLayout.SOUTH);
+     setVisible(true);
+ }
+}
