@@ -1,6 +1,5 @@
 package MBS;
 
-//Java GUI + Core Logic: Movie Ticket Purchasing App (continued with Account, Cart, Movie, Payment, Admin)
 
 import javax.swing.*;
 import javax.swing.SwingUtilities;
