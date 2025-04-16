@@ -25,6 +25,8 @@ class Database {
     static {
         movies.add(new Movie("Inception", "Nolan", 1900, "7:00PM", 8.8f, 15.0f));
         movies.add(new Movie("The Matrix", "Wachowskis", 1901, "9:00PM", 9.0f, 12.0f));
+        movies.add(new Movie("Transformers The Dark Side of the Moon", "Nolan", 1901, "10:00PM", 9.0f, 12.0f));
+
     }
 }
 
