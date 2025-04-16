@@ -1,6 +1,5 @@
 package MBS;
 
-
 import javax.swing.*;
 import javax.swing.SwingUtilities;
 import java.awt.*;
@@ -9,11 +8,24 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-
+import javax.swing.border.EmptyBorder;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.*;
 
 public class MovieApp {
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new LoginScreen());
+        try {
+            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            // fallback to default
+        }
+        SwingUtilities.invokeLater(LoginScreen::new);
     }
 }
 
@@ -23,17 +35,14 @@ class Database {
     static Map<String, Cart> carts = new HashMap<>();
 
     static {
-        movies.add(new Movie("Inception", "Nolan", 1900, "7:00PM", 8.8f, 15.0f));
-        movies.add(new Movie("The Matrix", "Wachowskis", 1901, "9:00PM", 9.0f, 12.0f));
-        movies.add(new Movie("Transformers The Dark Side of the Moon", "Nolan", 1901, "10:00PM", 9.0f, 12.0f));
-
+        movies.add(new Movie("Inception", "Nolan", 1900, new String[]{"7:00PM", "9:30PM"}, 8.8f, 15.0f));
+        movies.add(new Movie("The Matrix", "Wachowskis", 1901, new String[]{"8:00PM", "10:00PM"}, 9.0f, 12.0f));
     }
 }
 
 class Account {
-    String email, password, location;
+    String email, password;
     int id;
-    String phone;
 
     public Account(String email, String password) {
         this.email = email;
@@ -48,67 +57,56 @@ class Account {
 
 class Cart {
     String accountEmail;
-    List<Movie> items = new ArrayList<>();
+    List<MovieTicket> items = new ArrayList<>();
 
     public Cart(String email) {
         this.accountEmail = email;
     }
 
-    public void addToCart(Movie m) {
-        items.add(m);
+    public void addToCart(Movie movie, String showtime) {
+        items.add(new MovieTicket(movie, showtime));
     }
 
     public float getTotal() {
-        return (float) items.stream().mapToDouble(m -> m.cost).sum();
+        return (float) items.stream().mapToDouble(t -> t.movie.cost).sum();
+    }
+
+    public void clear() {
+        items.clear();
     }
 }
 
 class Movie {
-    String title, director, showtime;
+    String title, director;
     int movieId;
+    String[] showtimes;
     float avgReview, cost;
 
-    public Movie(String title, String director, int movieId, String showtime, float avgReview, float cost) {
+    public Movie(String title, String director, int movieId, String[] showtimes, float avgReview, float cost) {
         this.title = title;
         this.director = director;
         this.movieId = movieId;
-        this.showtime = showtime;
+        this.showtimes = showtimes;
         this.avgReview = avgReview;
         this.cost = cost;
     }
 
     public String toString() {
-        return title + " - " + showtime + " ($" + cost + ")";
+        return title + " — " + director + " | Rating: " + avgReview;
     }
 }
 
-class Payment {
-    public static boolean makeCardPayment(String accountEmail, float total) {
-        System.out.println("Charging $" + total + " to card for " + accountEmail);
-        return true;
+class MovieTicket {
+    Movie movie;
+    String showtime;
+
+    public MovieTicket(Movie movie, String showtime) {
+        this.movie = movie;
+        this.showtime = showtime;
     }
 
-    public static boolean makePayPalPayment(String accountEmail, float total) {
-        System.out.println("Processing PayPal $" + total + " for " + accountEmail);
-        return true;
-    }
-
-    public static boolean makeVenmoPayment(String accountEmail, float total) {
-        System.out.println("Processing Venmo $" + total + " for " + accountEmail);
-        return true;
-    }
-}
-
-class Admin {
-    static String adminUser = "admin";
-    static String adminPass = "admin123";
-
-    public static boolean login(String user, String pass) {
-        return user.equals(adminUser) && pass.equals(adminPass);
-    }
-
-    public static void addMovie(Movie m) {
-        Database.movies.add(m);
+    public String toString() {
+        return movie.title + " @ " + showtime + " ($" + movie.cost + ")";
     }
 }
 
@@ -117,12 +115,14 @@ class LoginScreen extends JFrame {
     JPasswordField passwordField;
 
     public LoginScreen() {
-        setTitle("Movie App Login");
+        setTitle("Login");
         setSize(300, 200);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        JPanel panel = new JPanel(new GridLayout(3, 2));
+        JPanel panel = new JPanel(new GridLayout(3, 2, 10, 10));
+        panel.setBorder(new EmptyBorder(15, 15, 15, 15));
+
         panel.add(new JLabel("Email:"));
         emailField = new JTextField();
         panel.add(emailField);
@@ -169,51 +169,50 @@ class LoginScreen extends JFrame {
 
 class MainScreen extends JFrame {
     Account account;
-    DefaultListModel<Movie> movieListModel = new DefaultListModel<>();
-    JList<Movie> movieList;
+    JPanel moviePanel;
 
     public MainScreen(Account account) {
         this.account = account;
 
-        setTitle("Welcome " + account.email);
-        setSize(600, 400);
+        setTitle("Movie Browser - Welcome " + account.email);
+        setSize(800, 500);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
+        moviePanel = new JPanel();
+        moviePanel.setLayout(new BoxLayout(moviePanel, BoxLayout.Y_AXIS));
+        moviePanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+
         for (Movie m : Database.movies) {
-            movieListModel.addElement(m);
+            JPanel mPanel = new JPanel();
+            mPanel.setLayout(new BoxLayout(mPanel, BoxLayout.Y_AXIS));
+            mPanel.setBorder(BorderFactory.createTitledBorder(m.title));
+
+            JLabel label = new JLabel(m.toString());
+            mPanel.add(label);
+
+            for (String showtime : m.showtimes) {
+                JButton timeBtn = new JButton("Book: " + showtime);
+                timeBtn.addActionListener(e -> {
+                    account.getCart().addToCart(m, showtime);
+                    JOptionPane.showMessageDialog(this, "Added to cart: " + m.title + " at " + showtime);
+                });
+                mPanel.add(timeBtn);
+            }
+
+            moviePanel.add(mPanel);
         }
 
-        movieList = new JList<>(movieListModel);
-        add(new JScrollPane(movieList), BorderLayout.CENTER);
+        JScrollPane scrollPane = new JScrollPane(moviePanel);
+        add(scrollPane, BorderLayout.CENTER);
+
+        JButton viewCartBtn = new JButton("View Cart");
+        viewCartBtn.addActionListener(e -> new CartScreen(account));
 
         JPanel bottom = new JPanel();
-        JButton addToCart = new JButton("Add to Cart");
-        JButton viewCart = new JButton("View Cart");
-        JButton payWithCard = new JButton("Pay with Card");
-        JButton payWithPayPal = new JButton("Pay with PayPal");
-        JButton payWithVenmo = new JButton("Pay with Venmo");
-
-        addToCart.addActionListener(e -> {
-            Movie selected = movieList.getSelectedValue();
-            if (selected != null) {
-                account.getCart().addToCart(selected);
-                JOptionPane.showMessageDialog(this, selected.title + " added to cart.");
-            }
-        });
-
-        viewCart.addActionListener(e -> new CartScreen(account));
-        payWithCard.addActionListener(e -> Payment.makeCardPayment(account.email, account.getCart().getTotal()));
-        payWithPayPal.addActionListener(e -> Payment.makePayPalPayment(account.email, account.getCart().getTotal()));
-        payWithVenmo.addActionListener(e -> Payment.makeVenmoPayment(account.email, account.getCart().getTotal()));
-
-        bottom.add(addToCart);
-        bottom.add(viewCart);
-        bottom.add(payWithCard);
-        bottom.add(payWithPayPal);
-        bottom.add(payWithVenmo);
-
+        bottom.add(viewCartBtn);
         add(bottom, BorderLayout.SOUTH);
+
         setVisible(true);
     }
 }
@@ -234,6 +233,8 @@ class CartScreen extends JFrame {
 
         refreshCartList();
 
+        cartList.setFont(new Font("Arial", Font.PLAIN, 14));
+        cartList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         add(new JScrollPane(cartList), BorderLayout.CENTER);
         totalLabel.setHorizontalAlignment(SwingConstants.CENTER);
         add(totalLabel, BorderLayout.NORTH);
@@ -245,9 +246,10 @@ class CartScreen extends JFrame {
 
         JButton checkoutBtn = new JButton("Checkout");
         checkoutBtn.addActionListener(e -> {
-            boolean paid = Payment.makeCardPayment(account.email, account.getCart().getTotal());
-            if (paid) {
-                account.getCart().items.clear();
+            float total = account.getCart().getTotal();
+            int confirm = JOptionPane.showConfirmDialog(this, "Charge $" + total + " to card?", "Confirm Payment", JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                account.getCart().clear();
                 refreshCartList();
                 JOptionPane.showMessageDialog(this, "Payment successful! Thank you.");
             }
@@ -262,8 +264,8 @@ class CartScreen extends JFrame {
 
     private void refreshCartList() {
         cartModel.clear();
-        for (Movie m : account.getCart().items) {
-            cartModel.addElement(m.toString());
+        for (MovieTicket t : account.getCart().items) {
+            cartModel.addElement(t.toString());
         }
         totalLabel.setText("Total: $" + account.getCart().getTotal());
     }
