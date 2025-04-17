@@ -2,7 +2,7 @@ package MBS;
 
 
 import javax.swing.*;
-import javax.swing.SwingUtilities;
+
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,7 +14,6 @@ import java.util.Random;
 public class MovieApp {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new LoginScreen());
-        
         Database.accounts.put("admin", new Account("admin", "admin123"));
     }
 }
@@ -80,9 +79,17 @@ class Movie {
         this.cost = cost;
     }
 
-    public String toString() {
+    public Movie(String title2, String director2, String cast, String ratiing, String summary, String reviews,
+			String runtime) {
+		// TODO Auto-generated constructor stub
+	}
+
+	public String toString() {
         return title + " - " + showtime + " ($" + cost + ")";
     }
+	public int getInt(JTextField field) {
+	    return Integer.parseInt(field.getText());
+	}
 }
 
 class Payment {
@@ -115,6 +122,8 @@ class Admin {
         Database.movies.remove(m);
     }
 }
+
+
 
 class LoginScreen extends JFrame {
     JTextField emailField;
@@ -200,7 +209,7 @@ class MainScreen extends JFrame {
         if(account.email=="admin"&&account.password=="admin123") {
         	 JButton adminPage = new JButton("Administative Options");
              bottom.add(adminPage);
-             adminPage.addActionListener(e ->  new adminpage());
+             adminPage.addActionListener(e ->  {new adminpage(account); dispose();});
 
 
         }
@@ -297,7 +306,7 @@ class adminpage extends JFrame {
     DefaultListModel<Movie> movieListModel = new DefaultListModel<>();
     JList<Movie> movieList;
 
-    public adminpage() {
+    public adminpage(Account account) {
         this.account = account;
 
         setTitle("Administative Options");
@@ -305,26 +314,151 @@ class adminpage extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
+
+        movieList = new JList<>(movieListModel);
         for (Movie m : Database.movies) {
             movieListModel.addElement(m);
 
-        movieList = new JList<>(movieListModel);
         add(new JScrollPane(movieList), BorderLayout.CENTER);
         
+        //add bottons amd panel
         JPanel bottomPanel = new JPanel();
-
+        JButton Home = new JButton("Home");
         JButton addmovie = new JButton("Add a Movie");
         JButton deletemovie = new JButton("Remove a movie");
-
         
+        //event handler
+        Home.addActionListener(e -> { new MainScreen(account); dispose();});
+        addmovie.addActionListener(e ->  {new addMovie(account); dispose(); });
+
+        bottomPanel.add(Home);
         bottomPanel.add(addmovie);
         bottomPanel.add(deletemovie);
         add(bottomPanel, BorderLayout.SOUTH);
 
             }
-
-      
-
         setVisible(true);
     }
 }
+
+class addMovie extends JFrame {
+    Account account;
+    DefaultListModel<Movie> movieListModel = new DefaultListModel<>();
+    JList<Movie> movieList;
+    JTextField title;
+    JTextField director;
+    JTextField cast;
+    JTextField rating;
+    JTextField current;
+    JTextField reviews;
+    JTextField summary;
+    JTextField runtime;
+    JTextField price;
+    JTextField movieid;
+    JTextField time;
+    public int getInt(JTextField field) {//method to get int from text field
+	    return Integer.parseInt(field.getText());
+	}
+    public float getFloat(JTextField reviews) {//method to get float from text field
+	    return Float.parseFloat(reviews.getText());
+	}
+    
+    //add image somehow
+
+    public addMovie(Account account) {
+        this.account = account;
+
+        setTitle("Please Enter Movie Details");
+        setTitle("Movie App Login");
+        setSize(300, 200);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+
+        ///input text boxes
+        JPanel panel = new JPanel(new GridLayout(11, 2));
+        panel.add(new JLabel("Title:"));
+        title = new JTextField();
+        panel.add(title);
+        
+        panel.add(new JLabel("Director:"));
+        director = new JTextField();
+        panel.add(director);
+        
+        panel.add(new JLabel("Movie ID:"));
+        movieid = new JTextField();
+        panel.add(movieid);
+        
+        panel.add(new JLabel("Cast:"));
+        cast = new JTextField();
+        panel.add(cast);
+        
+        panel.add(new JLabel("MPA Rating:"));
+        rating = new JTextField();
+        panel.add(rating);
+        
+        panel.add(new JLabel("Customer Review(s):"));
+        reviews = new JTextField();
+        panel.add(reviews);
+        
+        panel.add(new JLabel("Summary:"));
+        summary = new JTextField();
+        panel.add(summary);
+        
+        panel.add(new JLabel("Runtime:"));
+        runtime = new JTextField();
+        panel.add(runtime);
+        
+        panel.add(new JLabel("Ticket Cost:"));
+        price = new JTextField();
+        panel.add(price);
+        
+        panel.add(new JLabel("Time:"));
+        time = new JTextField();
+        panel.add(time);
+        add(panel);
+        setVisible(true);
+        
+        
+
+        for (Movie m : Database.movies) {
+            movieListModel.addElement(m);
+        }
+        add(new JScrollPane(movieList), BorderLayout.CENTER);
+        
+        //add panel and bottoms
+        JPanel bottomPanel = new JPanel();
+        JButton Home = new JButton("Home");
+        JButton addmovie = new JButton("Add  Movie");
+        JButton deletemovie = new JButton("Remove a movie");
+        
+        Home.addActionListener(e ->  {new MainScreen(account); dispose();});
+        bottomPanel.add(Home);
+        bottomPanel.add(addmovie);
+        bottomPanel.add(deletemovie);
+        add(bottomPanel, BorderLayout.SOUTH);
+        addmovie.addActionListener(e -> addmovie());
+
+   	 setVisible(true);
+   	 
+
+            
+        }
+        private void addmovie() {//creates movie
+            String titlef = title.getText();
+            String directorf = director.getText();
+            String castf = cast.getText();
+            String ratingf = rating.getText();
+            String summaryf = summary.getText();
+            float reviewsf = getFloat(reviews);
+            String runtimef = runtime.getText();
+            int movieidf = getInt(movieid);
+            float costf = getFloat(price);
+            String timef = time.getText();
+
+            
+
+            Database.movies.add(new Movie(titlef,directorf,movieidf ,timef ,reviewsf,costf));//puts movie in display
+
+        }
+}
+
