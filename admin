@@ -321,19 +321,28 @@ class adminpage extends JFrame {
 
         add(new JScrollPane(movieList), BorderLayout.CENTER);
         
-        //add bottons amd panel
+        //create buttons and panel
         JPanel bottomPanel = new JPanel();
         JButton Home = new JButton("Home");
         JButton addmovie = new JButton("Add a Movie");
-        JButton deletemovie = new JButton("Remove a movie");
+        JButton deleteMovie = new JButton("Remove a movie");
         
         //event handler
         Home.addActionListener(e -> { new MainScreen(account); dispose();});
         addmovie.addActionListener(e ->  {new addMovie(account); dispose(); });
-
+        deleteMovie.addActionListener(e -> {
+        	Movie selected = movieList.getSelectedValue();
+            if (selected != null) {
+                Database.movies.remove(selected);
+                new adminpage(account);
+                dispose();
+                
+            }
+            });
+        //but buttons on bottom panel
         bottomPanel.add(Home);
         bottomPanel.add(addmovie);
-        bottomPanel.add(deletemovie);
+        bottomPanel.add(deleteMovie);
         add(bottomPanel, BorderLayout.SOUTH);
 
             }
@@ -370,9 +379,10 @@ class addMovie extends JFrame {
 
         setTitle("Please Enter Movie Details");
         setTitle("Movie App Login");
-        setSize(300, 200);
+        setSize(600, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
 
         ///input text boxes
         JPanel panel = new JPanel(new GridLayout(11, 2));
@@ -415,31 +425,25 @@ class addMovie extends JFrame {
         panel.add(new JLabel("Time:"));
         time = new JTextField();
         panel.add(time);
-        add(panel);
+        add(panel, BorderLayout.CENTER);
         setVisible(true);
         
-        
-
-        for (Movie m : Database.movies) {
-            movieListModel.addElement(m);
-        }
-        add(new JScrollPane(movieList), BorderLayout.CENTER);
+       
         
         //add panel and bottoms
         JPanel bottomPanel = new JPanel();
         JButton Home = new JButton("Home");
         JButton addmovie = new JButton("Add  Movie");
-        JButton deletemovie = new JButton("Remove a movie");
         
+        //event handler
         Home.addActionListener(e ->  {new MainScreen(account); dispose();});
+        addmovie.addActionListener(e -> {addmovie();dispose();new adminpage(account); });
+
+        //bottom panel buttons
         bottomPanel.add(Home);
         bottomPanel.add(addmovie);
-        bottomPanel.add(deletemovie);
         add(bottomPanel, BorderLayout.SOUTH);
-        addmovie.addActionListener(e -> addmovie());
-
-   	 setVisible(true);
-   	 
+        setVisible(true);
 
             
         }
@@ -456,9 +460,10 @@ class addMovie extends JFrame {
             String timef = time.getText();
 
             
-
-            Database.movies.add(new Movie(titlef,directorf,movieidf ,timef ,reviewsf,costf));//puts movie in display
+          //puts movie in display
+            Database.movies.add(new Movie(titlef,directorf,movieidf ,timef ,reviewsf,costf));
 
         }
+
 }
 
