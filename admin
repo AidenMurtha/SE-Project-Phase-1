@@ -200,6 +200,8 @@ class MainScreen extends JFrame {
         if(account.email=="admin"&&account.password=="admin123") {
         	 JButton adminPage = new JButton("Administative Options");
              bottom.add(adminPage);
+             adminPage.addActionListener(e ->  new adminpage());
+
 
         }
         
@@ -211,13 +213,15 @@ class MainScreen extends JFrame {
                 account.getCart().addToCart(selected);
                 JOptionPane.showMessageDialog(this, selected.title + " added to cart.");
             }
+
+        
         });
 
         viewCart.addActionListener(e -> new CartScreen(account));
         payWithCard.addActionListener(e -> Payment.makeCardPayment(account.email, account.getCart().getTotal()));
         payWithPayPal.addActionListener(e -> Payment.makePayPalPayment(account.email, account.getCart().getTotal()));
         payWithVenmo.addActionListener(e -> Payment.makeVenmoPayment(account.email, account.getCart().getTotal()));
-
+        
         bottom.add(addToCart);
         bottom.add(viewCart);
         bottom.add(payWithCard);
@@ -293,7 +297,7 @@ class adminpage extends JFrame {
     DefaultListModel<Movie> movieListModel = new DefaultListModel<>();
     JList<Movie> movieList;
 
-    public adminpage(Account account) {
+    public adminpage() {
         this.account = account;
 
         setTitle("Administative Options");
