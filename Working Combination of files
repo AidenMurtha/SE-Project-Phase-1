@@ -105,11 +105,29 @@ class Movie {
 	     this.avgReview = avgReview;
 	     this.cost = cost;
 	     this.current=current;
-	     if(current==true) {
-	    	 
-	    	 
-	     }
 	 }
+	 
+	 public String getMovieInfo() {
+		 	
+	        StringBuilder info = new StringBuilder();
+	        info.append("Title: ").append(title).append("\n");
+	        info.append("Director: ").append(director).append("\n");
+	        info.append("Movie ID: ").append(movieId).append("\n");
+	        info.append("Showtimes: ");
+	        if (showtimes != null && showtimes.length > 0) {
+	            for (String time : showtimes) {
+	                info.append(time).append(" ");
+	            }
+	        } else {
+	            info.append("No showtimes available");
+	        }
+	        info.append("\n");
+	        info.append("Average Review: ").append(avgReview).append("/5.0\n");
+	        info.append("Ticket Cost: $").append(cost).append("\n");
+	        info.append("Currently Playing: ").append(current ? "Yes" : "No");
+
+	        return info.toString();
+	    }
 
 	 public String toString() {
 	     return title + " — " + director + (avgReview > 0 ? " | Rating: " + avgReview : " (Coming Soon)");
@@ -290,56 +308,48 @@ class BrowseMenu extends JFrame {
 	 }
 	}
 
-class MainScreen extends JFrame {
-	 protected JPanel moviePanel;
+	 class MainScreen extends JFrame {
+		    protected JPanel moviePanel;
 
-	 public MainScreen(Account account, JFrame parent) {
-	     setTitle("Available Movies");
-	     setSize(500, 400);
-	     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	     setLocationRelativeTo(null);
-	     setLayout(new BorderLayout());
+		    public MainScreen(Account account, JFrame parent) {
+		        setTitle("Available Movies");
+		        setSize(500, 400);
+		        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		        setLocationRelativeTo(null);
+		        setLayout(new BorderLayout());
 
-	     moviePanel = new JPanel();
-	     moviePanel.setLayout(new BoxLayout(moviePanel, BoxLayout.Y_AXIS));
-	     JScrollPane scrollPane = new JScrollPane(moviePanel);
-	     add(scrollPane, BorderLayout.CENTER);
+		        moviePanel = new JPanel();
+		        moviePanel.setLayout(new BoxLayout(moviePanel, BoxLayout.Y_AXIS));
+		        JScrollPane scrollPane = new JScrollPane(moviePanel);
+		        add(scrollPane, BorderLayout.CENTER);
 
-	     for (Movie m : Database.movies) {
-	    	 JPanel mPanel = new JPanel();
-	    	 if (m.isCurrent()) {
-		         
-		         mPanel.setLayout(new BoxLayout(mPanel, BoxLayout.Y_AXIS));
-		         mPanel.setBorder(BorderFactory.createTitledBorder(m.title));
-		         JLabel label = new JLabel(m.toString());
-		         mPanel.add(label);
-	    	 }
-	    	 
-	        
-	         for (String showtime : m.showtimes) {
-	             JButton timeBtn = new JButton("Book: " + showtime);
-	             timeBtn.addActionListener(e -> {
-	                 account.getCart().addToCart(m, showtime);
-	                 JOptionPane.showMessageDialog(this, "Added to cart: " + m.title + " at " + showtime);
-	             });
-	             
-	             mPanel.add(timeBtn);
-	         }
-	         moviePanel.add(mPanel);
-	     }
 
-	     JButton backBtn = new JButton("Back");
-	     backBtn.addActionListener(e -> {
-	         dispose();
-	         parent.setVisible(true);
-	     });
-	     add(backBtn, BorderLayout.SOUTH);
+		        for (Movie m : Database.movies) {
+		            if (m.isCurrent()) {
+		                JPanel mPanel = new JPanel();
+		                JButton movieb = new JButton(m.title);
+		                mPanel.add(movieb);
+		                movieb.addActionListener(e -> {
+		                    new moviePage(account, parent, m); 
+		                    dispose();
+		                });
+		                moviePanel.add(mPanel);  
+		            }
+		        }
 
-	     revalidate();
-	     repaint();
-	     setVisible(true);
-	 }
-	}
+		        // Add "Back" button at the bottom
+		        JButton backBtn = new JButton("Back");
+		        backBtn.addActionListener(e -> {
+		            dispose();
+		            parent.setVisible(true);
+		        });
+		        add(backBtn, BorderLayout.SOUTH);
+
+		        revalidate();
+		        repaint();
+		        setVisible(true);
+		    }
+		}
 
 class SearchResultsScreen extends MainScreen {
 	 public SearchResultsScreen(Account account, List<Movie> searchResults, JFrame parent) {
@@ -655,5 +665,40 @@ class comingSoon extends JFrame {
 	 }
 	}
 
+class moviePage extends JFrame {
+    protected JPanel moviePanel;
 
+    public moviePage(Account account, JFrame parent, Movie m) {
+        String info = m.getMovieInfo();
+        
+        setTitle("Movie Info");
+        setSize(500, 400);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
+
+        moviePanel = new JPanel();
+        moviePanel.setLayout(new BoxLayout(moviePanel, BoxLayout.Y_AXIS));
+
+        // Create a label or text area to display the movie info
+        JTextArea movieInfoArea = new JTextArea(info);
+        movieInfoArea.setEditable(false);  // Make it non-editable
+        JScrollPane scrollPane = new JScrollPane(movieInfoArea);
+        moviePanel.add(scrollPane);
+
+        add(moviePanel, BorderLayout.CENTER);
+
+        // Add back button
+        JButton backBtn = new JButton("Back");
+        backBtn.addActionListener(e -> {
+            dispose();
+            parent.setVisible(true);
+        });
+        add(backBtn, BorderLayout.SOUTH);
+
+        revalidate();
+        repaint();
+        setVisible(true);
+    }
+}
 
