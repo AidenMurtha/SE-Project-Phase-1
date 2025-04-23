@@ -260,11 +260,14 @@ class BrowseMenu extends JFrame {
 	     if(account.email=="admin"&&account.password=="admin123") {
         	 JButton adminPage = new JButton("Administative Options");
              adminPage.addActionListener(e ->  {new adminpage(account); dispose();});
+        	 add(adminPage);
+
 
 	     browseBtn.addActionListener(e -> {
 	         setVisible(false);
 	         new MainScreen(account, this);
 	     });
+	     }
 
 	     searchBtn.addActionListener(e -> {
 	         String query = JOptionPane.showInputDialog(this, "Enter movie title to search:");
@@ -303,7 +306,6 @@ class BrowseMenu extends JFrame {
 	     add(comingSoonBtn);
 	     add(cartBtn);
 	     add(logoutBtn);
-    	 add(adminPage);
 	     setVisible(true);
 	 }
 	}
@@ -641,7 +643,7 @@ class addMovie extends JFrame {
         }
 
 }
-}
+
 
 class comingSoon extends JFrame {
     protected JPanel moviePanel;
