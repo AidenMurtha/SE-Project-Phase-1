@@ -36,16 +36,18 @@ class Database {
 	 static Map<String, Account> accounts = new HashMap<>();
 	 static List<Movie> movies = new ArrayList<>();
 
+	
 	 static Map<String, Cart> carts = new HashMap<>();
 
 	 static {
-	     movies.add(new Movie("Inception", "Nolan", 1900, new String[]{"7:00PM", "9:30PM"}, 8.8f, 15.0f,true));
-	     movies.add(new Movie("The Matrix", "Wachowskis", 1901, new String[]{"8:00PM", "10:00PM"}, 9.0f, 12.0f,true));
+		 String sd = ("7:00PM,9:30PM");
+	     movies.add(new Movie("Inception", "Nolan", 1900,8.8f, 15.0f, true, sd,sd,sd,sd,sd,sd));
+	     movies.add(new Movie("The Matrix", "Wachowskis", 1901, 9.0f, 12.0f,true,sd,sd,sd,sd,sd,sd));
 
-	     movies.add(new Movie("Spider-Man 4", "Jon Watts", 1904, new String[]{}, 0.0f, 0.0f,false));
-	     movies.add(new Movie("Thunderbolts", "Jake Schreier", 1905, new String[]{}, 0.0f, 0.0f,false));
-	     movies.add(new Movie("Fantastic Four", "Matt Shakman", 1907, new String[]{}, 0.0f, 0.0f,false));
-	     movies.add(new Movie("Blade", "Yann Demange", 1908, new String[]{}, 0.0f, 0.0f,false));
+	     movies.add(new Movie("Spider-Man 4", "Jon Watts", 1904, 0.0f, 0.0f,false,sd,sd,sd,sd,sd,sd));
+	     movies.add(new Movie("Thunderbolts", "Jake Schreier", 1905, 0.0f, 0.0f,false,sd,sd,sd,sd,sd,sd));
+	     movies.add(new Movie("Fantastic Four", "Matt Shakman", 1907, 0.0f, 0.0f,false,sd,sd,sd,sd,sd,sd));
+	     movies.add(new Movie("Blade", "Yann Demange", 1908, 0.0f, 0.0f,false,sd,sd,sd,sd,sd,sd));
 	 }
 	}
 
