@@ -173,27 +173,26 @@ class Movie {
 	            info.append("No showtimes available");
 	
 	        }
-	        if (showtimes != null && showtimes.length > 0) {
-	            for (String time : showtimes) {
-	                info.append(time).append(" ");
-	            }
-	        } else {
-	            info.append("No showtimes available");
-	        }
+
 	        info.append("\n");
 	        info.append("Average Review: ").append(avgReview).append("/5.0\n");
 	        info.append("Ticket Cost: $").append(cost).append("\n");
 	        info.append("Showtimes by Location:\n");
 	        return info.toString();
 	    }
-	 public String[] getMovieTimes() {
-		return showtimes;
-		 
-	 }
+
 
 	 public String toString() {
 	     return title + " — " + director + (avgReview > 0 ? " | Rating: " + avgReview : " (Coming Soon)");
 	 }
+
+	public String getTitle(Movie movie) {
+		return movie.title;
+	}
+
+	public int getId(Movie movie) {
+		return movie.movieId;
+	}
 	}
 
 	class MovieTicket {
@@ -411,23 +410,19 @@ class SearchResultsScreen extends MainScreen {
 	     super(account, parent);
 	     moviePanel.removeAll();
 	     for (Movie m : searchResults) {
-	         JPanel mPanel = new JPanel();
-	         mPanel.setLayout(new BoxLayout(mPanel, BoxLayout.Y_AXIS));
-	         mPanel.setBorder(BorderFactory.createTitledBorder(m.title));
-	         JLabel label = new JLabel(m.toString());
-	         mPanel.add(label);
-	         for (String showtime : m.showtimes) {
-	             JButton timeBtn = new JButton("Book: " + showtime);
-	             timeBtn.addActionListener(e -> {
-	                 account.getCart().addToCart(m, showtime);
-	                 JOptionPane.showMessageDialog(this, "Added to cart: " + m.title + " at " + showtime);
-	             });
-	             mPanel.add(timeBtn);
-	         }
-	         moviePanel.add(mPanel);
-	     }
-	     revalidate();
-	     repaint();
+	    	    JPanel mPanel = new JPanel();
+	    	    mPanel.setLayout(new BoxLayout(mPanel, BoxLayout.Y_AXIS));
+	    	    String title = m.getTitle(m);
+	    	    JButton movieButton = new JButton(title);
+	    	    movieButton.addActionListener(e -> {
+	    	        dispose();
+	    	        new moviePage(account, parent, m);
+	    	    });
+	    	    mPanel.add(movieButton); // Add the button to the panel
+
+	    	    moviePanel.add(mPanel); // << This was missing
+	    	}
+
 	 }
 	}
         
@@ -810,9 +805,11 @@ class moviePage extends JFrame {
 
         // Create a label or text area to display the movie info
         JTextArea movieInfoArea = new JTextArea(info);
+        moviePanel.add(movieInfoArea);
         movieInfoArea.setEditable(false);  // Make it non-editable
         JScrollPane scrollPane = new JScrollPane(movieInfoArea);
         moviePanel.add(scrollPane);
+        
 
         JButton backBtn = new JButton("Back");
         backBtn.addActionListener(e -> {
