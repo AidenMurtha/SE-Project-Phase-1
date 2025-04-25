@@ -1,7 +1,7 @@
 package MBS;
 
 import javax.swing.*;
-import javax.swing.SwingUtilities;
+
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,16 +36,18 @@ class Database {
 	 static Map<String, Account> accounts = new HashMap<>();
 	 static List<Movie> movies = new ArrayList<>();
 
+	
 	 static Map<String, Cart> carts = new HashMap<>();
 
 	 static {
-	     movies.add(new Movie("Inception", "Nolan", 1900, new String[]{"7:00PM", "9:30PM"}, 8.8f, 15.0f,true));
-	     movies.add(new Movie("The Matrix", "Wachowskis", 1901, new String[]{"8:00PM", "10:00PM"}, 9.0f, 12.0f,true));
+		 String sd = ("7:00PM,9:30PM");
+	     movies.add(new Movie("Inception", "Nolan", 1900,8.8f, 15.0f, true, sd,sd,sd,sd,sd,sd));
+	     movies.add(new Movie("The Matrix", "Wachowskis", 1901, 9.0f, 12.0f,true,sd,sd,sd,sd,sd,sd));
 
-	     movies.add(new Movie("Spider-Man 4", "Jon Watts", 1904, new String[]{}, 0.0f, 0.0f,false));
-	     movies.add(new Movie("Thunderbolts", "Jake Schreier", 1905, new String[]{}, 0.0f, 0.0f,false));
-	     movies.add(new Movie("Fantastic Four", "Matt Shakman", 1907, new String[]{}, 0.0f, 0.0f,false));
-	     movies.add(new Movie("Blade", "Yann Demange", 1908, new String[]{}, 0.0f, 0.0f,false));
+	     movies.add(new Movie("Spider-Man 4", "Jon Watts", 1904, 0.0f, 0.0f,false,sd,sd,sd,sd,sd,sd));
+	     movies.add(new Movie("Thunderbolts", "Jake Schreier", 1905, 0.0f, 0.0f,false,sd,sd,sd,sd,sd,sd));
+	     movies.add(new Movie("Fantastic Four", "Matt Shakman", 1907, 0.0f, 0.0f,false,sd,sd,sd,sd,sd,sd));
+	     movies.add(new Movie("Blade", "Yann Demange", 1908, 0.0f, 0.0f,false,sd,sd,sd,sd,sd,sd));
 	 }
 	}
 
@@ -89,31 +91,88 @@ class Cart {
 class Movie {
 	 String title, director;
 	 int movieId;
-	 String[] showtimes;
 	 float avgReview, cost;
 	 boolean current;
+	 String ashowtimes;
+	 String lshowtimes;
+	 String leashowtimes;
+	 String pshowtimes;
+	 String sshowtimes;
+	 String abshowtimes;
 	 
 	 public boolean isCurrent() {
 		    return current;
 		}
 
-	 public Movie(String title, String director, int movieId, String[] showtimes, float avgReview, float cost,boolean current) {
+	 public Movie(String title, String director, int movieId, float avgReview, float cost,boolean current, 
+			 String ashowtimes, String lshowtimes, 	 String leashowtimes, String pshowtimes, String sshowtimes, String abshowtimes
+ ) {
 	     this.title = title;
 	     this.director = director;
 	     this.movieId = movieId;
-	     this.showtimes = showtimes;
 	     this.avgReview = avgReview;
 	     this.cost = cost;
 	     this.current=current;
+	     this.ashowtimes=ashowtimes;
+	     this.lshowtimes=lshowtimes;
+	     this.leashowtimes=leashowtimes;
+	     this.pshowtimes=pshowtimes;
+	     this.sshowtimes=sshowtimes;
+	     this.abshowtimes=abshowtimes;
+
+
+
+
 	 }
-	 
-	 public String getMovieInfo() {
+
+
+	public String getMovieInfo() {
 		 	
 	        StringBuilder info = new StringBuilder();
 	        info.append("Title: ").append(title).append("\n");
 	        info.append("Director: ").append(director).append("\n");
 	        info.append("Movie ID: ").append(movieId).append("\n");
 	        info.append("Showtimes: ");
+	        if(current=true) {
+	        	if (ashowtimes!=null) {
+	        		
+	        	}else {
+		            info.append("No showtimes available at ");
+	        	}
+	        	
+	        	if (lshowtimes!=null) {
+	        		
+	        	}else {
+		            info.append("No showtimes available at Lubbock");
+	        	}
+	        	
+	        	if (leashowtimes!=null) {
+	        		
+	        	}else {
+		            info.append("No showtimes available at Levaland");
+	        	}
+	        	
+	        	if (pshowtimes!=null) {
+	        		
+	        	}else {
+		            info.append("No showtimes available at Plainsview");
+	        	}
+	        	if (sshowtimes!=null) {
+	        		
+	        	}else {
+		            info.append("No showtimes available at Snyder");
+	        	}
+	        	
+	        	if (abshowtimes!=null) {
+	        		
+	        	}else {
+		            info.append("No showtimes available at Abiline");
+	        	}
+	        	
+	        }else {
+	            info.append("No showtimes available");
+	
+	        }
 	        if (showtimes != null && showtimes.length > 0) {
 	            for (String time : showtimes) {
 	                info.append(time).append(" ");
@@ -124,10 +183,13 @@ class Movie {
 	        info.append("\n");
 	        info.append("Average Review: ").append(avgReview).append("/5.0\n");
 	        info.append("Ticket Cost: $").append(cost).append("\n");
-	        info.append("Currently Playing: ").append(current ? "Yes" : "No");
-
+	        info.append("Showtimes by Location:\n");
 	        return info.toString();
 	    }
+	 public String[] getMovieTimes() {
+		return showtimes;
+		 
+	 }
 
 	 public String toString() {
 	     return title + " — " + director + (avgReview > 0 ? " | Rating: " + avgReview : " (Coming Soon)");
@@ -249,18 +311,17 @@ class BrowseMenu extends JFrame {
 	     JButton comingSoonBtn = new JButton("Future Movies");
 	     JButton cartBtn = new JButton("View Cart");
 	     JButton logoutBtn = new JButton("Logout");
-	     JButton backBtn = new JButton("Back");
 	     if(account.email=="admin"&&account.password=="admin123") {
         	 JButton adminPage = new JButton("Administative Options");
              adminPage.addActionListener(e ->  {new adminpage(account); dispose();});
         	 add(adminPage);
 
+	     }
+
 	     browseBtn.addActionListener(e -> {
 	         setVisible(false);
 	         new MainScreen(account, this);
 	     });
-	     }
-
 	     searchBtn.addActionListener(e -> {
 	         String query = JOptionPane.showInputDialog(this, "Enter movie title to search:");
 	         if (query != null && !query.trim().isEmpty()) {
@@ -293,64 +354,88 @@ class BrowseMenu extends JFrame {
 	         dispose();
 	         parent.setVisible(true);
 	     });
-
-	     backBtn.addActionListener(e -> {
-	         dispose();
-	         parent.setVisible(true);
-	     });
-
 	     add(browseBtn);
 	     add(searchBtn);
 	     add(comingSoonBtn);
 	     add(cartBtn);
 	     add(logoutBtn);
-	     add(backBtn);
 	     setVisible(true);
 	 }
 	}
 
-	 class MainScreen extends JFrame {
-		    protected JPanel moviePanel;
+class MainScreen extends JFrame {
+    protected JPanel moviePanel;
 
-		    public MainScreen(Account account, JFrame parent) {
-		        setTitle("Available Movies");
-		        setSize(500, 400);
-		        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		        setLocationRelativeTo(null);
-		        setLayout(new BorderLayout());
+    public MainScreen(Account account, JFrame parent) {
+        setTitle("Available Movies");
+        setSize(600, 800);  // Bigger window for bigger posters
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
 
-		        moviePanel = new JPanel();
-		        moviePanel.setLayout(new BoxLayout(moviePanel, BoxLayout.Y_AXIS));
-		        JScrollPane scrollPane = new JScrollPane(moviePanel);
-		        add(scrollPane, BorderLayout.CENTER);
+        moviePanel = new JPanel();
+        moviePanel.setLayout(new BoxLayout(moviePanel, BoxLayout.Y_AXIS));
+        JScrollPane scrollPane = new JScrollPane(moviePanel);
+        add(scrollPane, BorderLayout.CENTER);
 
+        for (Movie m : Database.movies) {
+            if (m.isCurrent()) {
+                MovieScreenPanel mPanel = new MovieScreenPanel(m.title);
 
-		        for (Movie m : Database.movies) {
-		            if (m.isCurrent()) {
-		                JPanel mPanel = new JPanel();
-		                JButton movieb = new JButton(m.title);
-		                mPanel.add(movieb);
-		                movieb.addActionListener(e -> {
-		                    new moviePage(account, parent, m); 
-		                    dispose();
-		                });
-		                moviePanel.add(mPanel);  
-		            }
-		        }
+                mPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+                    public void mouseClicked(java.awt.event.MouseEvent evt) {
+                        setVisible(false);
+                        new moviePage(account, MainScreen.this, m);
+                    }
+                });
 
-		        // Add "Back" button at the bottom
-		        JButton backBtn = new JButton("Back");
-		        backBtn.addActionListener(e -> {
-		            dispose();
-		            parent.setVisible(true);
-		        });
-		        add(backBtn, BorderLayout.SOUTH);
+                moviePanel.add(mPanel);
+                moviePanel.add(Box.createRigidArea(new Dimension(0, 30))); // More space between posters
+            }
+        }
 
-		        revalidate();
-		        repaint();
-		        setVisible(true);
-		    }
-		}
+        JButton backBtn = new JButton("Back");
+        backBtn.addActionListener(e -> {
+            dispose();
+            if (parent != null) {
+                parent.setVisible(true);
+            }
+        });
+        add(backBtn, BorderLayout.SOUTH);
+
+        revalidate();
+        repaint();
+        setVisible(true);
+    }
+}
+
+class MovieScreenPanel extends JPanel {
+    String title;
+
+    public MovieScreenPanel(String title) {
+        this.title = title;
+        setPreferredSize(new Dimension(300, 450)); // Poster size: Width 300px, Height 450px
+        setMaximumSize(new Dimension(300, 450));
+        setBackground(Color.WHITE);
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        // Draw poster frame
+        g.setColor(Color.BLACK);
+        g.drawRoundRect(10, 10, getWidth() - 20, getHeight() - 20, 30, 30);
+
+        // Title text inside the poster
+        g.setFont(new Font("SansSerif", Font.BOLD, 18));
+        FontMetrics fm = g.getFontMetrics();
+        int titleWidth = fm.stringWidth(title);
+        int x = (getWidth() - titleWidth) / 2;
+        int y = getHeight() - 40; // Put the title near the bottom
+        g.drawString(title, x, y);
+    }
+}
+
 
 class SearchResultsScreen extends MainScreen {
 	 public SearchResultsScreen(Account account, List<Movie> searchResults, JFrame parent) {
@@ -505,7 +590,16 @@ class addMovie extends JFrame {
     JTextField price;
     JTextField movieid;
     JTextField time;
-    JTextField showtimes;
+    JTextField ashowtimes;
+    JTextField lshowtimes;
+    JTextField leashowtimes;
+    JTextField pshowtimes;
+    JTextField sshowtimes;
+    JTextField abshowtimes;
+
+
+
+
     public int getInt(JTextField field) {//method to get int from text field
 	    return Integer.parseInt(field.getText());
 	}
@@ -527,7 +621,7 @@ class addMovie extends JFrame {
         setLayout(new BorderLayout());
 
         ///input text boxes
-        JPanel panel = new JPanel(new GridLayout(12, 2));
+        JPanel panel = new JPanel(new GridLayout(18, 2));
         panel.add(new JLabel("Title:"));
         title = new JTextField();
         panel.add(title);
@@ -568,10 +662,11 @@ class addMovie extends JFrame {
         time = new JTextField();
         panel.add(time);
         
-        panel.add(new JLabel("Show Time(s):"));
-        showtimes = new JTextField();
-        panel.add(showtimes);
         
+        
+        
+
+
         JCheckBox checkbox = new JCheckBox("Is this movie currently playing?");
         checkbox.addActionListener(e -> {
             if (checkbox.isSelected()) {
@@ -580,6 +675,40 @@ class addMovie extends JFrame {
             	current=false;
             }
         });
+        if(checkbox != null ) {
+        	panel.add(new JLabel("Please enter showtimes for each location seperated by a ','"));
+        	panel.add(new JLabel("A show times:"));
+        	ashowtimes  = new JTextField();
+            panel.add(ashowtimes);
+            
+            panel.add(new JLabel("Lubbock show times:"));
+            lshowtimes = new JTextField();
+            panel.add(lshowtimes);
+            
+            panel.add(new JLabel("Leaveland show times:"));
+            leashowtimes = new JTextField();
+            panel.add(leashowtimes);
+            
+            panel.add(new JLabel("Plainsview show times:"));
+            pshowtimes = new JTextField();
+            panel.add(pshowtimes);
+            
+            panel.add(new JLabel("Snyder show times:"));
+            sshowtimes = new JTextField();
+            panel.add(sshowtimes);
+            
+            panel.add(new JLabel("Abiline show times:"));
+            abshowtimes = new JTextField();
+            panel.add(abshowtimes);
+            
+        } else {
+        	ashowtimes=null;
+        	lshowtimes=null;
+        	leashowtimes=null;
+        	pshowtimes=null;
+        	sshowtimes=null;
+        	abshowtimes=null;
+        }
         panel.add(checkbox);
         
         
@@ -600,6 +729,8 @@ class addMovie extends JFrame {
         //bottom panel buttons
         bottomPanel.add(Home);
         bottomPanel.add(addmovie);
+        
+
         add(bottomPanel, BorderLayout.SOUTH);
         setVisible(true);
 
@@ -616,11 +747,37 @@ class addMovie extends JFrame {
             int movieidf = getInt(movieid);
             float costf = getFloat(price);
             String timef = time.getText();
-            String[] showtimef = showtimes.getText().split(",");
-            boolean currentf=current;
+            String ashowtimesf = ashowtimes.getText();
+            String lshowtimesf = lshowtimes.getText();
+            String leashowtimesf = leashowtimes.getText();
+            String pshowtimesf = pshowtimes.getText();
+            String sshowtimesf = sshowtimes.getText();
+            String abshowtimesf = abshowtimes.getText();
 
+            
+            boolean currentf=current;
+            if(ashowtimesf=="") {
+            	ashowtimesf=null;
+            }
+            if(lshowtimesf=="") {
+            	lshowtimesf=null;
+            }
+            if(abshowtimesf=="") {
+            	abshowtimesf=null;
+            }
+            if(leashowtimesf=="") {
+            	leashowtimesf=null;
+            }
+            if(pshowtimesf=="") {
+            	pshowtimesf=null;
+            }
+            if(sshowtimesf=="") {
+            	sshowtimesf=null;
+            }
+
+            
           //puts movie in display
-            Database.movies.add(new Movie(titlef,directorf,movieidf ,showtimef,reviewsf,costf,currentf));
+            Database.movies.add(new Movie(titlef,directorf,movieidf ,reviewsf,costf,currentf,ashowtimesf, lshowtimesf,leashowtimesf,pshowtimesf,sshowtimesf,abshowtimesf  ));
 
 
         }
@@ -629,42 +786,43 @@ class addMovie extends JFrame {
 
 
 class comingSoon extends JFrame {
-	 protected JPanel moviePanel;
+    protected JPanel moviePanel;
 
-	 public comingSoon(Account account, JFrame parent) {
-	     setTitle("Movies Coming Soon");
-	     setSize(500, 400);
-	     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	     setLocationRelativeTo(null);
-	     setLayout(new BorderLayout());
+    public comingSoon(Account account, JFrame parent) {
+        setTitle("Movies Coming Soon");
+        setSize(500, 400);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
 
-	     moviePanel = new JPanel();
-	     moviePanel.setLayout(new BoxLayout(moviePanel, BoxLayout.Y_AXIS));
-	     JScrollPane scrollPane = new JScrollPane(moviePanel);
-	     add(scrollPane, BorderLayout.CENTER);
+        moviePanel = new JPanel();
+        moviePanel.setLayout(new BoxLayout(moviePanel, BoxLayout.Y_AXIS));
+        JScrollPane scrollPane = new JScrollPane(moviePanel);
+        add(scrollPane, BorderLayout.CENTER);
 
-	     for (Movie m : Database.movies) {
-	    	 JPanel mPanel = new JPanel();
-	    	 if (m.isCurrent()==false) {
-		         
-		         mPanel.setLayout(new BoxLayout(mPanel, BoxLayout.Y_AXIS));
-		         mPanel.setBorder(BorderFactory.createTitledBorder(m.title));
-		         JLabel label = new JLabel(m.toString());
-		         mPanel.add(label);
-	    	 }
-	      moviePanel.add(mPanel);
-	      JButton backBtn = new JButton("Back");
-		  backBtn.addActionListener(e -> {
-		  dispose();
-		  parent.setVisible(true);
-		  add(backBtn, BorderLayout.SOUTH);
-	     });
-	 }
-	     revalidate();
-	     repaint();
-	     setVisible(true);
-	 }
-	}
+        for (Movie m : Database.movies) {
+            if (!m.isCurrent()) {
+                JPanel mPanel = new JPanel();
+                mPanel.setLayout(new BoxLayout(mPanel, BoxLayout.Y_AXIS));
+                mPanel.setBorder(BorderFactory.createTitledBorder(m.title));
+                JLabel label = new JLabel(m.toString());
+                mPanel.add(label);
+                moviePanel.add(mPanel);
+            }
+        }
+        JButton backBtn = new JButton("Back");
+        backBtn.addActionListener(e -> {
+            dispose();
+            parent.setVisible(true);
+        });
+        add(backBtn, BorderLayout.SOUTH);
+
+        revalidate();
+        repaint();
+        setVisible(true);
+    }
+}
+
 
 class moviePage extends JFrame {
     protected JPanel moviePanel;
@@ -687,13 +845,110 @@ class moviePage extends JFrame {
         JScrollPane scrollPane = new JScrollPane(movieInfoArea);
         moviePanel.add(scrollPane);
 
-        add(moviePanel, BorderLayout.CENTER);
-
-        // Add back button
         JButton backBtn = new JButton("Back");
         backBtn.addActionListener(e -> {
             dispose();
             parent.setVisible(true);
+        });
+        add(backBtn, BorderLayout.SOUTH);
+        revalidate();
+        repaint();
+        setVisible(true);
+        }
+
+
+    }
+
+
+class creditcard extends JFrame {
+	JTextField CCN;
+	JTextField zip;
+	JTextField expiration;
+	JTextField name;
+	JTextField CVV;
+	
+    JPanel panel = new JPanel(new GridLayout(25, 2));
+
+    public creditcard(Account account, JFrame parent) {
+        setTitle("Please enter payment details");
+        setSize(500, 400);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
+
+        panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        JScrollPane scrollPane = new JScrollPane(panel);
+        add(scrollPane, BorderLayout.CENTER);
+        
+        panel.add(new JLabel("Full Name:"));
+        name = new JTextField();
+        panel.add(name);
+
+        panel.add(new JLabel("Credit Card Number:"));
+        CCN = new JTextField();
+        panel.add(CCN);
+        
+        panel.add(new JLabel("CVV:"));
+        CVV = new JTextField();
+        panel.add(CVV);
+        
+        panel.add(new JLabel("Zipcode:"));
+        zip = new JTextField();
+        panel.add(zip);
+        
+        panel.add(new JLabel("Experation Date:"));
+        expiration = new JTextField();
+        panel.add(expiration);
+        
+        
+        
+        JButton backBtn = new JButton("Back");
+        backBtn.addActionListener(e -> {
+            dispose();
+            parent.setVisible(true);
+        });
+        
+        JButton submit = new JButton("Sumbit Payment");
+        backBtn.addActionListener(e -> {
+            dispose();
+            new paymentcomplete(account, parent);
+        });
+        add(backBtn, BorderLayout.SOUTH);
+
+        revalidate();
+        repaint();
+        setVisible(true);
+    }
+}
+
+class paymentcomplete extends JFrame {
+    protected JPanel moviePanel;
+
+    public paymentcomplete(Account account, JFrame parent) {
+        setTitle("Payment recived");
+        setSize(500, 400);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
+
+        moviePanel = new JPanel();
+        moviePanel.setLayout(new BoxLayout(moviePanel, BoxLayout.Y_AXIS));
+        JScrollPane scrollPane = new JScrollPane(moviePanel);
+        add(scrollPane, BorderLayout.CENTER);
+
+        
+        
+        JButton backBtn = new JButton("View tickets");
+        backBtn.addActionListener(e -> {
+            dispose();
+            //add function
+        });
+        
+        JButton submit = new JButton("Return Home");
+        backBtn.addActionListener(e -> {
+            dispose();
+            new BrowseMenu(account, parent);
         });
         add(backBtn, BorderLayout.SOUTH);
 
