@@ -362,49 +362,78 @@ class BrowseMenu extends JFrame {
 	 }
 	}
 
-	 class MainScreen extends JFrame {
-		    protected JPanel moviePanel;
+class MainScreen extends JFrame {
+    protected JPanel moviePanel;
 
-		    public MainScreen(Account account, JFrame parent) {
-		        setTitle("Available Movies");
-		        setSize(500, 400);
-		        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		        setLocationRelativeTo(null);
-		        setLayout(new BorderLayout());
+    public MainScreen(Account account, JFrame parent) {
+        setTitle("Available Movies");
+        setSize(600, 800);  // Bigger window for bigger posters
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
 
-		        moviePanel = new JPanel();
-		        moviePanel.setLayout(new BoxLayout(moviePanel, BoxLayout.Y_AXIS));
-		        JScrollPane scrollPane = new JScrollPane(moviePanel);
-		        add(scrollPane, BorderLayout.CENTER);
+        moviePanel = new JPanel();
+        moviePanel.setLayout(new BoxLayout(moviePanel, BoxLayout.Y_AXIS));
+        JScrollPane scrollPane = new JScrollPane(moviePanel);
+        add(scrollPane, BorderLayout.CENTER);
 
+        for (Movie m : Database.movies) {
+            if (m.isCurrent()) {
+                MovieScreenPanel mPanel = new MovieScreenPanel(m.title);
 
-		        for (Movie m : Database.movies) {
-		            if (m.isCurrent()) {
-		                JPanel mPanel = new JPanel();
-		                JButton movieb = new JButton(m.title);
-		                mPanel.add(movieb);
-		                movieb.addActionListener(e -> {
-		                    new moviePage(account, parent, m);
-		                    dispose();
-		                });
-		                moviePanel.add(mPanel);  
-		            }
-		        }
+                mPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+                    public void mouseClicked(java.awt.event.MouseEvent evt) {
+                        setVisible(false);
+                        new moviePage(account, MainScreen.this, m);
+                    }
+                });
 
-		        // Add "Back" button at the bottom
-		        JButton backBtn = new JButton("Back");
-		        backBtn.addActionListener(e -> {
-		            dispose();
-		            parent.setVisible(true);
-		        });
-		        add(backBtn, BorderLayout.SOUTH);
+                moviePanel.add(mPanel);
+                moviePanel.add(Box.createRigidArea(new Dimension(0, 30))); // More space between posters
+            }
+        }
 
-		        revalidate();
-		        repaint();
-		        setVisible(true);
-		    }
-		}
+        JButton backBtn = new JButton("Back");
+        backBtn.addActionListener(e -> {
+            dispose();
+            if (parent != null) {
+                parent.setVisible(true);
+            }
+        });
+        add(backBtn, BorderLayout.SOUTH);
 
+        revalidate();
+        repaint();
+        setVisible(true);
+    }
+}
+
+class MovieScreenPanel extends JPanel {
+    String title;
+
+    public MovieScreenPanel(String title) {
+        this.title = title;
+        setPreferredSize(new Dimension(300, 450)); // Poster size: Width 300px, Height 450px
+        setMaximumSize(new Dimension(300, 450));
+        setBackground(Color.WHITE);
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        // Draw poster frame
+        g.setColor(Color.BLACK);
+        g.drawRoundRect(10, 10, getWidth() - 20, getHeight() - 20, 30, 30);
+
+        // Title text inside the poster
+        g.setFont(new Font("SansSerif", Font.BOLD, 18));
+        FontMetrics fm = g.getFontMetrics();
+        int titleWidth = fm.stringWidth(title);
+        int x = (getWidth() - titleWidth) / 2;
+        int y = getHeight() - 40; // Put the title near the bottom
+        g.drawString(title, x, y);
+    }
+}
 class SearchResultsScreen extends MainScreen {
 	 public SearchResultsScreen(Account account, List<Movie> searchResults, JFrame parent) {
 	     super(account, parent);
