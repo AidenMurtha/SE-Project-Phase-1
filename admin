@@ -839,6 +839,7 @@ class moviePage extends JFrame {
         JScrollPane scrollPane = new JScrollPane(movieInfoArea);
         moviePanel.add(scrollPane);
         
+        add(moviePanel, BorderLayout.CENTER);
 
         JButton backBtn = new JButton("Back");
         backBtn.addActionListener(e -> {
