@@ -778,42 +778,50 @@ class moviePage extends JFrame {
     protected JPanel moviePanel;
 
     public moviePage(Account account, JFrame parent, Movie m) {
-        String info = m.getMovieInfo();
-        
         setTitle("Movie Info");
-        setSize(500, 400);
+        setSize(500, 600);  // a little taller to fit showtimes
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
         moviePanel = new JPanel();
         moviePanel.setLayout(new BoxLayout(moviePanel, BoxLayout.Y_AXIS));
+        JScrollPane scrollPane = new JScrollPane(moviePanel);
+        add(scrollPane, BorderLayout.CENTER);
 
-        // Create a label or text area to display the movie info
-        JTextArea movieInfoArea = new JTextArea(info);
+        JTextArea movieInfoArea = new JTextArea(m.getMovieInfo());
+        movieInfoArea.setEditable(false);
         moviePanel.add(movieInfoArea);
-        movieInfoArea.setEditable(false);  // Make it non-editable
-        JScrollPane scrollPane = new JScrollPane(movieInfoArea);
-        
-        if(m.current==true) {
-        	if(m.pshowtimes != null) {
-        		JTextArea ptime= new JTextArea("Movie times at Plainsview");
-        		String[] times = m.abshowtimes.split(",");
 
-        		for (String time : times) {
-        		    JButton showtimeBtn = new JButton(time.trim());
-        		    showtimeBtn.addActionListener(e -> {
-        		    	new confpage(account,m, );
-        		    });
-        		    moviePanel.add(showtimeBtn);
-        		}
-        		
-        	} else {
-        		JTextArea ptime= new JTextArea("No showtimes available at Plainsview");
-        	}
+        if (m.current) {
+            moviePanel.add(new JLabel("Showtimes at Plainsview:"));
+            if (m.pshowtimes != null) {
+                String[] times = m.pshowtimes.split(",");
+                for (String time : times) {
+                    String trimmedTime = time.trim();
+                    JButton showtimeBtn = new JButton(trimmedTime);
+                    showtimeBtn.addActionListener(e -> {
+                        String ticketCountStr = JOptionPane.showInputDialog(this, "How many tickets for " + trimmedTime + "?");
+                        try {
+                            int ticketCount = Integer.parseInt(ticketCountStr);
+                            if (ticketCount > 0) {
+                                for (int i = 0; i < ticketCount; i++) {
+                                    account.getCart().addToCart(m, trimmedTime);
+                                }
+                                JOptionPane.showMessageDialog(this, ticketCount + " ticket(s) added to cart for " + trimmedTime);
+                            } else {
+                                JOptionPane.showMessageDialog(this, "Please enter a number greater than 0.");
+                            }
+                        } catch (NumberFormatException ex) {
+                            JOptionPane.showMessageDialog(this, "Invalid number entered.");
+                        }
+                    });
+                    moviePanel.add(showtimeBtn);
+                }
+            } else {
+                moviePanel.add(new JLabel("No showtimes available at Plainsview."));
+            }
         }
-        moviePanel.add(scrollPane);
-        add(moviePanel, BorderLayout.CENTER);
 
         JButton backBtn = new JButton("Back");
         backBtn.addActionListener(e -> {
@@ -821,13 +829,13 @@ class moviePage extends JFrame {
             parent.setVisible(true);
         });
         add(backBtn, BorderLayout.SOUTH);
+
         revalidate();
         repaint();
         setVisible(true);
-        }
-
-
     }
+}
+
 
 
 class creditcard extends JFrame {
