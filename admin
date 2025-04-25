@@ -132,49 +132,6 @@ class Movie {
 	        info.append("Title: ").append(title).append("\n");
 	        info.append("Director: ").append(director).append("\n");
 	        info.append("Movie ID: ").append(movieId).append("\n");
-	        info.append("Showtimes: ");
-	        if(current=true) {
-	        	if (ashowtimes!=null) {
-	        		
-	        	}else {
-		            info.append("No showtimes available at ");
-	        	}
-	        	
-	        	if (lshowtimes!=null) {
-	        		
-	        	}else {
-		            info.append("No showtimes available at Lubbock");
-	        	}
-	        	
-	        	if (leashowtimes!=null) {
-	        		
-	        	}else {
-		            info.append("No showtimes available at Levaland");
-	        	}
-	        	
-	        	if (pshowtimes!=null) {
-	        		
-	        	}else {
-		            info.append("No showtimes available at Plainsview");
-	        	}
-	        	if (sshowtimes!=null) {
-	        		
-	        	}else {
-		            info.append("No showtimes available at Snyder");
-	        	}
-	        	
-	        	if (abshowtimes!=null) {
-	        		
-	        	}else {
-		            info.append("No showtimes available at Abiline");
-	        	}
-	        	
-	        }else {
-	            info.append("No showtimes available");
-	
-	        }
-
-	        info.append("\n");
 	        info.append("Average Review: ").append(avgReview).append("/5.0\n");
 	        info.append("Ticket Cost: $").append(cost).append("\n");
 	        info.append("Showtimes by Location:\n");
@@ -837,8 +794,25 @@ class moviePage extends JFrame {
         moviePanel.add(movieInfoArea);
         movieInfoArea.setEditable(false);  // Make it non-editable
         JScrollPane scrollPane = new JScrollPane(movieInfoArea);
-        moviePanel.add(scrollPane);
         
+        if(m.current==true) {
+        	if(m.pshowtimes != null) {
+        		JTextArea ptime= new JTextArea("Movie times at Plainsview");
+        		String[] times = m.abshowtimes.split(",");
+
+        		for (String time : times) {
+        		    JButton showtimeBtn = new JButton(time.trim());
+        		    showtimeBtn.addActionListener(e -> {
+        		    	new confpage(account,m, );
+        		    });
+        		    moviePanel.add(showtimeBtn);
+        		}
+        		
+        	} else {
+        		JTextArea ptime= new JTextArea("No showtimes available at Plainsview");
+        	}
+        }
+        moviePanel.add(scrollPane);
         add(moviePanel, BorderLayout.CENTER);
 
         JButton backBtn = new JButton("Back");
