@@ -55,8 +55,10 @@ class Account {
     String email, password, location;
     int id;
     String phone;
-
+    List<MovieTicket> tickets;
+    int quantity;
     public Account(String email, String password) {
+        this.tickets = new ArrayList<>();
         this.email = email;
         this.password = password;
         this.id = new Random().nextInt(10000);
@@ -64,6 +66,16 @@ class Account {
 
     public Cart getCart() {
         return Database.carts.computeIfAbsent(email, k -> new Cart(email));
+    }
+    
+    public void addTicket(Cart cart) {
+    	for (MovieTicket ticket : cart.items) {
+            tickets.add(ticket);
+        }
+    }
+
+    public List<MovieTicket> getTickets() {
+        return tickets;
     }
 }
 
@@ -75,8 +87,8 @@ class Cart {
         this.accountEmail = email;
     }
 
-    public void addToCart(Movie movie, String showtime) {
-        MovieTicket ticket = new MovieTicket(movie, showtime);
+    public void addToCart(Movie movie, String showtime, String location) {
+        MovieTicket ticket = new MovieTicket(movie, showtime, location);
         items.add(ticket);
     }
 
@@ -134,7 +146,6 @@ class Movie {
 	        info.append("Movie ID: ").append(movieId).append("\n");
 	        info.append("Average Review: ").append(avgReview).append("/5.0\n");
 	        info.append("Ticket Cost: $").append(cost).append("\n");
-	        info.append("Showtimes by Location:\n");
 	        return info.toString();
 	    }
 
@@ -155,10 +166,13 @@ class Movie {
 	class MovieTicket {
 	 Movie movie;
 	 String showtime;
+	 String location;
+	 
 
-	 public MovieTicket(Movie movie, String showtime) {
+	 public MovieTicket(Movie movie, String showtime, String location) {
 	     this.movie = movie;
 	     this.showtime = showtime;
+	     this.location=location;
 	 }
 
 	 public String toString() {
@@ -267,6 +281,8 @@ class BrowseMenu extends JFrame {
 	     JButton comingSoonBtn = new JButton("Future Movies");
 	     JButton cartBtn = new JButton("View Cart");
 	     JButton logoutBtn = new JButton("Logout");
+	     JButton viewti = new JButton("View Tickets");
+
 	     if(account.email=="admin"&&account.password=="admin123") {
         	 JButton adminPage = new JButton("Administative Options");
              adminPage.addActionListener(e ->  {new adminpage(account); dispose();});
@@ -278,6 +294,11 @@ class BrowseMenu extends JFrame {
 	         setVisible(false);
 	         new MainScreen(account, this);
 	     });
+	     viewti.addActionListener(e -> {
+	         setVisible(false);
+	         new ticketscreen(account, this);
+	     });
+	     
 	     searchBtn.addActionListener(e -> {
 	         String query = JOptionPane.showInputDialog(this, "Enter movie title to search:");
 	         if (query != null && !query.trim().isEmpty()) {
@@ -314,6 +335,7 @@ class BrowseMenu extends JFrame {
 	     add(searchBtn);
 	     add(comingSoonBtn);
 	     add(cartBtn);
+	     add(viewti);
 	     add(logoutBtn);
 	     setVisible(true);
 	 }
@@ -448,19 +470,13 @@ class CartScreen extends JFrame {
 	     JButton payPayPal = new JButton("Pay with PayPal");
 	     JButton backBtn = new JButton("Back");
 
-	     ActionListener payAction = e -> {
-	         if (cart.items.isEmpty()) {
-	             JOptionPane.showMessageDialog(this, "Cart is empty.");
-	         } else {
-	             JOptionPane.showMessageDialog(this, "Payment successful via " + ((JButton)e.getSource()).getText() + "!");
-	             cart.clear();
-	             cartArea.setText("Your cart is now empty.\n\nThank you for your purchase!");
-	         }
-	     };
+	     
+	     payCard.addActionListener(e -> { new creditcard(account, parent, cart); dispose();});
+	     //add function
+	     //payVenmo.addActionListener(e -> { new venmo(account, null); dispose();});
+	     //payPayPal.addActionListener(e -> { new paypal(account, null); dispose();});
 
-	     payCard.addActionListener(payAction);
-	     payVenmo.addActionListener(payAction);
-	     payPayPal.addActionListener(payAction);
+	     
 	     backBtn.addActionListener(e -> {
 	         dispose();
 	         parent.setVisible(true);
@@ -754,10 +770,13 @@ class comingSoon extends JFrame {
             if (!m.isCurrent()) {
                 JPanel mPanel = new JPanel();
                 mPanel.setLayout(new BoxLayout(mPanel, BoxLayout.Y_AXIS));
-                mPanel.setBorder(BorderFactory.createTitledBorder(m.title));
-                JLabel label = new JLabel(m.toString());
-                mPanel.add(label);
+                JButton mb = new JButton(m.toString());
+                mPanel.add(mb);
                 moviePanel.add(mPanel);
+                mb.addActionListener(e -> {
+                    dispose();
+                    new moviePage(account, parent, m);
+                });
             }
         }
         JButton backBtn = new JButton("Back");
@@ -806,7 +825,7 @@ class moviePage extends JFrame {
                             int ticketCount = Integer.parseInt(ticketCountStr);
                             if (ticketCount > 0) {
                                 for (int i = 0; i < ticketCount; i++) {
-                                    account.getCart().addToCart(m, trimmedTime);
+                                    account.getCart().addToCart(m, trimmedTime, "Plainsview");
                                 }
                                 JOptionPane.showMessageDialog(this, ticketCount + " ticket(s) added to cart for " + trimmedTime);
                             } else {
@@ -821,6 +840,142 @@ class moviePage extends JFrame {
             } else {
                 moviePanel.add(new JLabel("No showtimes available at Plainsview."));
             }
+            moviePanel.add(new JLabel("Showtimes at Lubbock:"));
+            if (m.lshowtimes != null) {
+                String[] times = m.lshowtimes.split(",");
+                for (String time : times) {
+                    String trimmedTime = time.trim();
+                    JButton showtimeBtn = new JButton(trimmedTime);
+                    showtimeBtn.addActionListener(e -> {
+                        String ticketCountStr = JOptionPane.showInputDialog(this, "How many tickets for " + trimmedTime + "?");
+                        try {
+                            int ticketCount = Integer.parseInt(ticketCountStr);
+                            if (ticketCount > 0) {
+                                for (int i = 0; i < ticketCount; i++) {
+                                    account.getCart().addToCart(m, trimmedTime,"Lubbock");
+                                }
+                                JOptionPane.showMessageDialog(this, ticketCount + " ticket(s) added to cart for " + trimmedTime);
+                            } else {
+                                JOptionPane.showMessageDialog(this, "Please enter a number greater than 0.");
+                            }
+                        } catch (NumberFormatException ex) {
+                            JOptionPane.showMessageDialog(this, "Invalid number entered.");
+                        }
+                    });
+                    moviePanel.add(showtimeBtn);
+                }
+            } else {
+                moviePanel.add(new JLabel("No showtimes available at Lubbock."));
+            }
+            moviePanel.add(new JLabel("Showtimes at Abiline:"));
+            if (m.leashowtimes != null) {
+                String[] times = m.abshowtimes.split(",");
+                for (String time : times) {
+                    String trimmedTime = time.trim();
+                    JButton showtimeBtn = new JButton(trimmedTime);
+                    showtimeBtn.addActionListener(e -> {
+                        String ticketCountStr = JOptionPane.showInputDialog(this, "How many tickets for " + trimmedTime + "?");
+                        try {
+                            int ticketCount = Integer.parseInt(ticketCountStr);
+                            if (ticketCount > 0) {
+                                for (int i = 0; i < ticketCount; i++) {
+                                    account.getCart().addToCart(m, trimmedTime,"Abiline");
+                                }
+                                JOptionPane.showMessageDialog(this, ticketCount + " ticket(s) added to cart for " + trimmedTime);
+                            } else {
+                                JOptionPane.showMessageDialog(this, "Please enter a number greater than 0.");
+                            }
+                        } catch (NumberFormatException ex) {
+                            JOptionPane.showMessageDialog(this, "Invalid number entered.");
+                        }
+                    });
+                    moviePanel.add(showtimeBtn);
+                }
+            } else {
+                moviePanel.add(new JLabel("No showtimes available at Lubbock."));
+            }
+            moviePanel.add(new JLabel("Showtimes at Snyder:"));
+            if (m.sshowtimes != null) {
+                String[] times = m.sshowtimes.split(",");
+                for (String time : times) {
+                    String trimmedTime = time.trim();
+                    JButton showtimeBtn = new JButton(trimmedTime);
+                    showtimeBtn.addActionListener(e -> {
+                        String ticketCountStr = JOptionPane.showInputDialog(this, "How many tickets for " + trimmedTime + "?");
+                        try {
+                            int ticketCount = Integer.parseInt(ticketCountStr);
+                            if (ticketCount > 0) {
+                                for (int i = 0; i < ticketCount; i++) {
+                                    account.getCart().addToCart(m, trimmedTime,"Snyder");
+                                }
+                                JOptionPane.showMessageDialog(this, ticketCount + " ticket(s) added to cart for " + trimmedTime);
+                            } else {
+                                JOptionPane.showMessageDialog(this, "Please enter a number greater than 0.");
+                            }
+                        } catch (NumberFormatException ex) {
+                            JOptionPane.showMessageDialog(this, "Invalid number entered.");
+                        }
+                    });
+                    moviePanel.add(showtimeBtn);
+                }
+            } else {
+                moviePanel.add(new JLabel("No showtimes available at Snyder."));
+            }
+            moviePanel.add(new JLabel("Showtimes at Armarillo:"));
+            if (m.ashowtimes != null) {
+                String[] times = m.ashowtimes.split(",");
+                for (String time : times) {
+                    String trimmedTime = time.trim();
+                    JButton showtimeBtn = new JButton(trimmedTime);
+                    showtimeBtn.addActionListener(e -> {
+                        String ticketCountStr = JOptionPane.showInputDialog(this, "How many tickets for " + trimmedTime + "?");
+                        try {
+                            int ticketCount = Integer.parseInt(ticketCountStr);
+                            if (ticketCount > 0) {
+                                for (int i = 0; i < ticketCount; i++) {
+                                    account.getCart().addToCart(m, trimmedTime,"Armarillo");
+                                }
+                                JOptionPane.showMessageDialog(this, ticketCount + " ticket(s) added to cart for " + trimmedTime);
+                            } else {
+                                JOptionPane.showMessageDialog(this, "Please enter a number greater than 0.");
+                            }
+                        } catch (NumberFormatException ex) {
+                            JOptionPane.showMessageDialog(this, "Invalid number entered.");
+                        }
+                    });
+                    moviePanel.add(showtimeBtn);
+                }
+            } else {
+                moviePanel.add(new JLabel("No showtimes available at Armarillo."));
+            }
+            moviePanel.add(new JLabel("Showtimes at Levalend:"));
+            if (m.leashowtimes != null) {
+                String[] times = m.leashowtimes.split(",");
+                for (String time : times) {
+                    String trimmedTime = time.trim();
+                    JButton showtimeBtn = new JButton(trimmedTime);
+                    showtimeBtn.addActionListener(e -> {
+                        String ticketCountStr = JOptionPane.showInputDialog(this, "How many tickets for " + trimmedTime + "?");
+                        try {
+                            int ticketCount = Integer.parseInt(ticketCountStr);
+                            if (ticketCount > 0) {
+                                for (int i = 0; i < ticketCount; i++) {
+                                    account.getCart().addToCart(m, trimmedTime,"Levalend");
+                                }
+                                JOptionPane.showMessageDialog(this, ticketCount + " ticket(s) added to cart for " + trimmedTime);
+                            } else {
+                                JOptionPane.showMessageDialog(this, "Please enter a number greater than 0.");
+                            }
+                        } catch (NumberFormatException ex) {
+                            JOptionPane.showMessageDialog(this, "Invalid number entered.");
+                        }
+                    });
+                    moviePanel.add(showtimeBtn);
+                }
+            } else {
+                moviePanel.add(new JLabel("No showtimes available at Levalend."));
+            }
+            
         }
 
         JButton backBtn = new JButton("Back");
@@ -847,7 +1002,7 @@ class creditcard extends JFrame {
 	
     JPanel panel = new JPanel(new GridLayout(25, 2));
 
-    public creditcard(Account account, JFrame parent) {
+    public creditcard(Account account, JFrame parent,Cart cart) {
         setTitle("Please enter payment details");
         setSize(500, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -888,11 +1043,15 @@ class creditcard extends JFrame {
         });
         
         JButton submit = new JButton("Sumbit Payment");
-        backBtn.addActionListener(e -> {
+        submit.addActionListener(e -> {
             dispose();
-            new paymentcomplete(account, parent);
+            new paymentcomplete(account, parent, cart);
+            
         });
-        add(backBtn, BorderLayout.SOUTH);
+        JPanel botpan = new JPanel();
+        botpan.add(backBtn);
+        botpan.add(submit);
+        add(botpan, BorderLayout.SOUTH);
 
         revalidate();
         repaint();
@@ -900,10 +1059,14 @@ class creditcard extends JFrame {
     }
 }
 
+
+
+
+
 class paymentcomplete extends JFrame {
     protected JPanel moviePanel;
 
-    public paymentcomplete(Account account, JFrame parent) {
+    public paymentcomplete(Account account, JFrame parent,Cart cart) {
         setTitle("Payment recived");
         setSize(500, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -917,19 +1080,72 @@ class paymentcomplete extends JFrame {
 
         
         
-        JButton backBtn = new JButton("View tickets");
-        backBtn.addActionListener(e -> {
+        JButton viewti = new JButton("View tickets");
+        viewti.addActionListener(e -> {
+        	account.addTicket(cart);
             dispose();
-            //add function
+            new ticketscreen(account, parent);
         });
         
-        JButton submit = new JButton("Return Home");
+        JButton backBtn = new JButton("Return Home");
+        backBtn.addActionListener(e -> {
+        	account.addTicket(cart);
+            dispose();
+            new BrowseMenu(account, parent);
+        });
+        JPanel botpan = new JPanel();
+        botpan.add(backBtn);
+        botpan.add(viewti);
+
+        add(botpan, BorderLayout.SOUTH);
+        
+
+        revalidate();
+        repaint();
+        setVisible(true);
+    }
+}
+
+class ticketscreen extends JFrame {
+    protected JPanel moviePanel;
+
+    public ticketscreen(Account account, JFrame parent) {
+        setTitle("Tickets Purchased");
+        setSize(500, 400);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
+
+        moviePanel = new JPanel();
+        moviePanel.setLayout(new BoxLayout(moviePanel, BoxLayout.Y_AXIS));
+        JScrollPane scrollPane = new JScrollPane(moviePanel);
+        add(scrollPane, BorderLayout.CENTER);
+
+        // Make sure tickets list is initialized
+        if (account.tickets != null && !account.tickets.isEmpty()) {
+            for (MovieTicket movie : account.tickets) {
+                String text = movie + " Tickets";
+                JButton movieb = new JButton(text);
+                moviePanel.add(movieb);
+            }
+        } else {
+            JLabel empty = new JLabel("No Recent Purchases");
+            empty.setAlignmentX(Component.CENTER_ALIGNMENT); // Center it
+            moviePanel.add(empty);
+        }
+
+        JButton backBtn = new JButton("Return Home");
         backBtn.addActionListener(e -> {
             dispose();
             new BrowseMenu(account, parent);
         });
-        add(backBtn, BorderLayout.SOUTH);
+        JPanel botpan = new JPanel();
+        botpan.add(backBtn);
+        add(botpan, BorderLayout.SOUTH);
 
+        // FORCE layout refresh
+        moviePanel.revalidate();
+        moviePanel.repaint();
         revalidate();
         repaint();
         setVisible(true);
