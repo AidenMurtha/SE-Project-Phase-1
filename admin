@@ -1,1153 +1,305 @@
-package MBS;
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Movie Booking System</title>
+  <style>
+    .section { display: none; margin-top: 20px; }
+    button.toggle-btn {
+      background: none;
+      border: none;
+      color: blue;
+      text-decoration: underline;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 0;
+    }
+    .action-buttons form {
+      display: inline;
+      margin: 0 4px;
+    }
+  </style>
+</head>
+<body>
 
-import javax.swing.*;
+<h2>
+  <a th:href="@{/admin/home}" style="text-decoration: none; color: inherit;">Movie Booking System</a>
+</h2>
 
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.HashMap;
+<div style="position: absolute; top: 10px; right: 20px; font-weight: bold; font-size: 14px;">
+  Welcome, <span th:text="${username}">Guest</span>
+  <form th:action="@{/logout}" method="get">
+    <button type="submit">Logout</button>
+  </form>
+</div>
+
+<div style="margin-top: 40px;">
+
+<!-- === MOVIE TABLE === -->
+<button class="toggle-btn" onclick="toggleSection('movieTable')">Current Movies</button><br>
+<div id="movieTable" class="section">
+  <table border="1" cellpadding="8">
+    <tr>
+      <th>Title</th>
+      <th>Director</th>
+      <th>Showtime</th>
+      <th>Location</th>
+      <th>Movie ID</th>
+      <th>Average Review</th>
+      <th>Cost</th>
+      <th>Image URL</th>
+      <th>Actions</th>
+    </tr>
+    <tr th:each="movie : ${movies}">
+      <form th:action="@{/admin/edit-movie}" method="post">
+        <td><input type="text" name="title" th:value="${movie.title}" required></td>
+        <td><input type="text" name="director" th:value="${movie.director}" required></td>
+        <td><input type="text" name="showtime" th:value="${movie.showtime}" required></td>
+        <td>
+          <select name="location" required>
+            <option th:each="location : ${locations}"
+                    th:value="${location}"
+                    th:text="${location}"
+                    th:selected="${location == movie.location}">
+            </option>
+          </select>
+        </td>
+        <td><input type="number" name="movieId" th:value="${movie.movieId}" readonly></td>
+        <td><input type="number" step="0.1" name="avgReview" th:value="${movie.avgReview}" required></td>
+        <td><input type="number" step="0.01" name="cost" th:value="${movie.cost}" required></td>
+        <td><input type="text" name="imgUrl" th:value="${movie.imgUrl}" required></td>
+        <td>
+          <button type="submit">Save</button>
+      </form>
+      <form th:action="@{/admin/delete-movie}" method="post" onsubmit="return confirm('Delete this movie from the list?');" style="display:inline;">
+        <input type="hidden" name="movieId" th:value="${movie.movieId}">
+        <button type="submit">Delete</button>
+      </form>
+        </td>
+    </tr>
+  </table>
+</div>
+
+<br>
+
+<!-- === ADD MOVIE FORM === -->
+<button class="toggle-btn" onclick="toggleSection('addMovieForm')">Add Movie</button><br>
+<div id="addMovieForm" class="section">
+  <form th:action="@{/admin/add-movie}" method="post" style="max-width: 400px;">
+    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+      <label style="width: 100px;">Title:</label>
+      <input type="text" name="title" required style="flex: 1;">
+    </div>
+    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+      <label style="width: 100px;">Director:</label>
+      <input type="text" name="director" required style="flex: 1;">
+    </div>
+    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+      <label style="width: 100px;">Showtime:</label>
+      <input type="text" name="showtime" required style="flex: 1;">
+    </div>
+    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+      <label style="width: 100px;">Movie ID:</label>
+      <input type="number" name="movieId" required style="flex: 1;">
+    </div>
+    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+      <label style="width: 100px;">Avg Review:</label>
+      <input type="number" step="0.1" name="avgReview" required style="flex: 1;">
+    </div>
+    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+      <label style="width: 100px;">Cost:</label>
+      <input type="number" step="0.01" name="cost" required style="flex: 1;">
+    </div>
+    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+      <label style="width: 100px;">Locations:</label>
+      <select name="locations" multiple required style="flex: 1; height: 120px;">
+        <option th:each="location : ${locations}" th:value="${location}" th:text="${location}"></option>
+      </select>
+    </div>
+    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+      <label style="width: 100px;">Image URL:</label>
+      <input type="text" name="imgUrl" required style="flex: 1;">
+    </div>
+    <button type="submit">Add Movie</button>
+  </form>
+</div>
+
+<br>
+
+<!-- === ACCOUNTS TABLE === -->
+<button class="toggle-btn" onclick="toggleSection('accountTable')">View Accounts</button><br>
+<div id="accountTable" class="section">
+  <table border="1" cellpadding="8">
+    <tr>
+      <th>Account ID</th>
+      <th>Username</th>
+      <th>Email</th>
+      <th>Phone</th>
+      <th>Location</th>
+      <th>Actions</th>
+    </tr>
+    <tr th:each="account : ${accounts}">
+      <td th:text="${account.id}"></td>
+      <td th:text="${account.username}"></td>
+      <td th:text="${account.email}"></td>
+      <td th:text="${account.phone}"></td>
+      <td th:text="${account.location}"></td>
+      <td>
+        <form th:action="@{/admin/delete-account}" method="post" onsubmit="return confirm('Are you sure you want to delete this account?');">
+          <input type="hidden" name="accountId" th:value="${account.id}">
+          <button type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+  </table>
+</div>
+
+</div> <!-- End Main Div -->
+
+<!-- === TOGGLE SCRIPT === -->
+<script>
+function toggleSection(id) {
+  const section = document.getElementById(id);
+  section.style.display = (section.style.display === "block") ? "none" : "block";
+}
+</script>
+
+</body>
+</html>
+
+package com.MBSTeam4.controller;
+
+import com.MBSTeam4.model.Database;
+import com.MBSTeam4.model.Movie;
+import jakarta.servlet.http.HttpSession;
+import org.springframework.ui.Model;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import javax.swing.border.EmptyBorder;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.*;
 
-
-
-public class MovieApp {
-	 public static void main(String[] args) {
-	 Database.accounts.put("admin", new Account("admin", "admin123"));
-	     try {
-	         for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
-	             if ("Nimbus".equals(info.getName())) {
-	                 UIManager.setLookAndFeel(info.getClassName());
-	                 break;
-	             }
-	         }
-	     } catch (Exception e) {
-	         // fallback
-	     }
-	     SwingUtilities.invokeLater(LoginScreen::new);
-	 }
-	}
-
-class Database {
-	 static Map<String, Account> accounts = new HashMap<>();
-	 static List<Movie> movies = new ArrayList<>();
-
-	
-	 static Map<String, Cart> carts = new HashMap<>();
-
-	 static {
-		 String sd = ("7:00PM,9:30PM");
-	     movies.add(new Movie("Inception", "Nolan", 1900,8.8f, 15.0f, true, sd,sd,sd,sd,sd,sd));
-	     movies.add(new Movie("The Matrix", "Wachowskis", 1901, 9.0f, 12.0f,true,sd,sd,sd,sd,sd,sd));
-
-	     movies.add(new Movie("Spider-Man 4", "Jon Watts", 1904, 0.0f, 0.0f,false,sd,sd,sd,sd,sd,sd));
-	     movies.add(new Movie("Thunderbolts", "Jake Schreier", 1905, 0.0f, 0.0f,false,sd,sd,sd,sd,sd,sd));
-	     movies.add(new Movie("Fantastic Four", "Matt Shakman", 1907, 0.0f, 0.0f,false,sd,sd,sd,sd,sd,sd));
-	     movies.add(new Movie("Blade", "Yann Demange", 1908, 0.0f, 0.0f,false,sd,sd,sd,sd,sd,sd));
-	 }
-	}
-
-class Account {
-    String email, password, location;
-    int id;
-    String phone;
-    List<MovieTicket> tickets;
-    int quantity;
-    public Account(String email, String password) {
-        this.tickets = new ArrayList<>();
-        this.email = email;
-        this.password = password;
-        this.id = new Random().nextInt(10000);
-    }
-
-    public Cart getCart() {
-        return Database.carts.computeIfAbsent(email, k -> new Cart(email));
+@Controller
+@RequestMapping("/admin")
+public class AdminController {
+    
+    @GetMapping("/home")
+    public String homePage(Model model, HttpSession session) {
+        String adminId = (String) session.getAttribute("adminId");
+        
+        if (adminId == null) {
+            return "redirect:/home";
+        } else {
+            model.addAttribute("username", adminId);
+            model.addAttribute("movies", Database.movies);
+            model.addAttribute("locations", Database.locations);
+            model.addAttribute("accounts", Database.accounts.values());
+        }
+        
+        return "admin-home"; 
     }
     
-    public void addTicket(Cart cart) {
-    	for (MovieTicket ticket : cart.items) {
-            tickets.add(ticket);
-        }
-    }
+    @PostMapping("/add-movie")
+    public String addMovie(@RequestParam("title") String title, 
+                           @RequestParam("director") String director,
+                           @RequestParam("showtime") String showtime, 
+                           @RequestParam("locations") List<String> locations,
+                           @RequestParam("imgUrl") String imgUrl,
+                           @RequestParam("movieId") int movieId, 
+                           @RequestParam("avgReview") float avgReview, 
+                           @RequestParam("cost") float cost,
+                           Model model, HttpSession session) {
 
-    public List<MovieTicket> getTickets() {
-        return tickets;
-    }
-}
-
-class Cart {
-    String accountEmail;
-    List<MovieTicket> items = new ArrayList<>();
-
-    public Cart(String email) {
-        this.accountEmail = email;
-    }
-
-    public void addToCart(Movie movie, String showtime, String location) {
-        MovieTicket ticket = new MovieTicket(movie, showtime, location);
-        items.add(ticket);
-    }
-
-    public float getTotal() {
-        return (float) items.stream().mapToDouble(t -> t.movie.cost).sum();
-    }
-    public void clear() {
-        items.clear();
-    }
-}
-
-class Movie {
-	 String title, director;
-	 int movieId;
-	 float avgReview, cost;
-	 boolean current;
-	 String ashowtimes;
-	 String lshowtimes;
-	 String leashowtimes;
-	 String pshowtimes;
-	 String sshowtimes;
-	 String abshowtimes;
-	 
-	 public boolean isCurrent() {
-		    return current;
-		}
-
-	 public Movie(String title, String director, int movieId, float avgReview, float cost,boolean current, 
-			 String ashowtimes, String lshowtimes, 	 String leashowtimes, String pshowtimes, String sshowtimes, String abshowtimes
- ) {
-	     this.title = title;
-	     this.director = director;
-	     this.movieId = movieId;
-	     this.avgReview = avgReview;
-	     this.cost = cost;
-	     this.current=current;
-	     this.ashowtimes=ashowtimes;
-	     this.lshowtimes=lshowtimes;
-	     this.leashowtimes=leashowtimes;
-	     this.pshowtimes=pshowtimes;
-	     this.sshowtimes=sshowtimes;
-	     this.abshowtimes=abshowtimes;
-
-
-
-
-	 }
-
-
-	public String getMovieInfo() {
-		 	
-	        StringBuilder info = new StringBuilder();
-	        info.append("Title: ").append(title).append("\n");
-	        info.append("Director: ").append(director).append("\n");
-	        info.append("Movie ID: ").append(movieId).append("\n");
-	        info.append("Average Review: ").append(avgReview).append("/5.0\n");
-	        info.append("Ticket Cost: $").append(cost).append("\n");
-	        return info.toString();
-	    }
-
-
-	 public String toString() {
-	     return title + " — " + director + (avgReview > 0 ? " | Rating: " + avgReview : " (Coming Soon)");
-	 }
-
-	public String getTitle(Movie movie) {
-		return movie.title;
-	}
-
-	public int getId(Movie movie) {
-		return movie.movieId;
-	}
-	}
-
-	class MovieTicket {
-	 Movie movie;
-	 String showtime;
-	 String location;
-	 
-
-	 public MovieTicket(Movie movie, String showtime, String location) {
-	     this.movie = movie;
-	     this.showtime = showtime;
-	     this.location=location;
-	 }
-
-	 public String toString() {
-	     return movie.title + " @ " + showtime + " ($" + movie.cost + ")";
-	 }
-	}
-
-class Payment {
-    public static boolean makeCardPayment(String accountEmail, float total) {
-        System.out.println("Charging $" + total + " to card for " + accountEmail);
-        return true;
-    }
-
-    public static boolean makePayPalPayment(String accountEmail, float total) {
-        System.out.println("Processing PayPal $" + total + " for " + accountEmail);
-        return true;
-    }
-
-    public static boolean makeVenmoPayment(String accountEmail, float total) {
-        System.out.println("Processing Venmo $" + total + " for " + accountEmail);
-        return true;
-    }
-}
-
-class Admin {
-    static String adminUser = "admin";
-    static String adminPass = "admin123";
-    public static boolean login(String user, String pass) {
-        return user.equals(adminUser) && pass.equals(adminPass);
-    }
-    public static void addMovie(Movie m) {
-        Database.movies.add(m);
-    }
-    public static void deleteMovie(Movie m) {
-        Database.movies.remove(m);
-    }
-}
-
-
-class LoginScreen extends JFrame {
-	 JTextField emailField;
-	 JPasswordField passwordField;
-
-	 public LoginScreen() {
-	     setTitle("Login");
-	     setSize(300, 200);
-	     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	     setLocationRelativeTo(null);
-
-	     JPanel panel = new JPanel(new GridLayout(3, 2, 10, 10));
-	     panel.setBorder(new EmptyBorder(15, 15, 15, 15));
-
-	     panel.add(new JLabel("Email:"));
-	     emailField = new JTextField();
-	     panel.add(emailField);
-
-	     panel.add(new JLabel("Password:"));
-	     passwordField = new JPasswordField();
-	     panel.add(passwordField);
-
-	     JButton loginBtn = new JButton("Login");
-	     loginBtn.addActionListener(e -> login());
-	     panel.add(loginBtn);
-
-	     JButton signupBtn = new JButton("Sign Up");
-	     signupBtn.addActionListener(e -> signup());
-	     panel.add(signupBtn);
-
-	     add(panel);
-	     setVisible(true);
-	 }
-	 private void login() {
-	     String email = emailField.getText();
-	     String pass = new String(passwordField.getPassword());
-	     Account user = Database.accounts.get(email);
-	     if (user != null && user.password.equals(pass)) {
-	         setVisible(false);
-	         new BrowseMenu(user, this);
-	     } else {
-	         JOptionPane.showMessageDialog(this, "Invalid login.");
-	     }
-	 }
-
-	 private void signup() {
-	     String email = emailField.getText();
-	     String pass = new String(passwordField.getPassword());
-	     if (!Database.accounts.containsKey(email)) {
-	         Database.accounts.put(email, new Account(email, pass));
-	         JOptionPane.showMessageDialog(this, "Account created. You can now login.");
-	     } else {
-	         JOptionPane.showMessageDialog(this, "Account already exists.");
-	     }
-	 }
-}
-
-class BrowseMenu extends JFrame {
-	 public BrowseMenu(Account account, JFrame parent) {
-	     setTitle("Browse Options");
-	     setSize(300, 300);
-	     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	     setLocationRelativeTo(null);
-	     setLayout(new GridLayout(6, 1, 10, 10));
-
-	     JButton browseBtn = new JButton("Browse All Movies");
-	     JButton searchBtn = new JButton("Search Movies");
-	     JButton comingSoonBtn = new JButton("Future Movies");
-	     JButton cartBtn = new JButton("View Cart");
-	     JButton logoutBtn = new JButton("Logout");
-	     JButton viewti = new JButton("View Tickets");
-
-	     if(account.email=="admin"&&account.password=="admin123") {
-        	 JButton adminPage = new JButton("Administative Options");
-             adminPage.addActionListener(e ->  {new adminpage(account); dispose();});
-        	 add(adminPage);
-
-	     }
-
-	     browseBtn.addActionListener(e -> {
-	         setVisible(false);
-	         new MainScreen(account, this);
-	     });
-	     viewti.addActionListener(e -> {
-	         setVisible(false);
-	         new ticketscreen(account, this);
-	     });
-	     
-	     searchBtn.addActionListener(e -> {
-	         String query = JOptionPane.showInputDialog(this, "Enter movie title to search:");
-	         if (query != null && !query.trim().isEmpty()) {
-	             List<Movie> results = new ArrayList<>();
-	             for (Movie m : Database.movies) {
-	                 if (m.title.toLowerCase().contains(query.toLowerCase())) {
-	                     results.add(m);
-	                 }
-	             }
-	             if (results.isEmpty()) {
-	                 JOptionPane.showMessageDialog(this, "No results found.");
-	             } else {
-	                 setVisible(false);
-	                 new SearchResultsScreen(account, results, this);
-	             }
-	         }
-	     });
-
-	     comingSoonBtn.addActionListener(e -> {
-	    	 new comingSoon(account, this);
-	    	 dispose();
-	     });
-
-	     cartBtn.addActionListener(e -> {
-	         setVisible(false);
-	         new CartScreen(account, this);
-	     });
-
-	     logoutBtn.addActionListener(e -> {
-	         dispose();
-	         parent.setVisible(true);
-	     });
-	     add(browseBtn);
-	     add(searchBtn);
-	     add(comingSoonBtn);
-	     add(cartBtn);
-	     add(viewti);
-	     add(logoutBtn);
-	     setVisible(true);
-	 }
-	}
-
-class MainScreen extends JFrame {
-    protected JPanel moviePanel;
-
-    public MainScreen(Account account, JFrame parent) {
-        setTitle("Available Movies");
-        setSize(600, 800);  // Bigger window for bigger posters
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setLayout(new BorderLayout());
-
-        moviePanel = new JPanel();
-        moviePanel.setLayout(new BoxLayout(moviePanel, BoxLayout.Y_AXIS));
-        JScrollPane scrollPane = new JScrollPane(moviePanel);
-        add(scrollPane, BorderLayout.CENTER);
-
-        for (Movie m : Database.movies) {
-            if (m.isCurrent()) {
-                MovieScreenPanel mPanel = new MovieScreenPanel(m.title);
-
-                mPanel.addMouseListener(new java.awt.event.MouseAdapter() {
-                    public void mouseClicked(java.awt.event.MouseEvent evt) {
-                        setVisible(false);
-                        new moviePage(account, MainScreen.this, m);
-                    }
-                });
-
-                moviePanel.add(mPanel);
-                moviePanel.add(Box.createRigidArea(new Dimension(0, 30))); // More space between posters
-            }
+        if (session.getAttribute("adminId") == null) {
+            return "redirect:/home";
         }
 
-        JButton backBtn = new JButton("Back");
-        backBtn.addActionListener(e -> {
-            dispose();
-            if (parent != null) {
-                parent.setVisible(true);
-            }
-        });
-        add(backBtn, BorderLayout.SOUTH);
+        int idIncrement = 0;
+        for (String loc : locations) {
+            Movie newMovie = new Movie(
+                title,
+                director,
+                showtime,
+                loc,
+                imgUrl,
+                movieId + idIncrement,
+                avgReview,
+                cost
+            );
+            Database.movies.add(newMovie);
+            idIncrement++;
+        }
 
-        revalidate();
-        repaint();
-        setVisible(true);
+        Database.saveMovies();
+        model.addAttribute("success", "Movie added successfully to selected locations!");
+        return "redirect:/admin/home";
     }
-}
-
-class MovieScreenPanel extends JPanel {
-    String title;
-
-    public MovieScreenPanel(String title) {
-        this.title = title;
-        setPreferredSize(new Dimension(300, 450)); // Poster size: Width 300px, Height 450px
-        setMaximumSize(new Dimension(300, 450));
-        setBackground(Color.WHITE);
-    }
-
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        // Draw poster frame
-        g.setColor(Color.BLACK);
-        g.drawRoundRect(10, 10, getWidth() - 20, getHeight() - 20, 30, 30);
-
-        // Title text inside the poster
-        g.setFont(new Font("SansSerif", Font.BOLD, 18));
-        FontMetrics fm = g.getFontMetrics();
-        int titleWidth = fm.stringWidth(title);
-        int x = (getWidth() - titleWidth) / 2;
-        int y = getHeight() - 40; // Put the title near the bottom
-        g.drawString(title, x, y);
-    }
-}
-class SearchResultsScreen extends MainScreen {
-	 public SearchResultsScreen(Account account, List<Movie> searchResults, JFrame parent) {
-	     super(account, parent);
-	     moviePanel.removeAll();
-	     for (Movie m : searchResults) {
-	    	    JPanel mPanel = new JPanel();
-	    	    mPanel.setLayout(new BoxLayout(mPanel, BoxLayout.Y_AXIS));
-	    	    String title = m.getTitle(m);
-	    	    JButton movieButton = new JButton(title);
-	    	    movieButton.addActionListener(e -> {
-	    	        dispose();
-	    	        new moviePage(account, parent, m);
-	    	    });
-	    	    mPanel.add(movieButton); // Add the button to the panel
-
-	    	    moviePanel.add(mPanel); // << This was missing
-	    	}
-
-	 }
-	}
-        
-        
-        
-
-
-class CartScreen extends JFrame {
-	 public CartScreen(Account account, JFrame parent) {
-	     setTitle("Your Cart");
-	     setSize(400, 300);
-	     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	     setLocationRelativeTo(null);
-	     setLayout(new BorderLayout());
-
-	     Cart cart = account.getCart();
-
-	     JTextArea cartArea = new JTextArea();
-	     cartArea.setEditable(false);
-	     if (cart.items.isEmpty()) {
-	         cartArea.setText("Your cart is empty.");
-	     } else {
-	         StringBuilder sb = new StringBuilder();
-	         for (MovieTicket ticket : cart.items) {
-	             sb.append(ticket).append("\n");
-	         }
-	         sb.append("\nTotal: $").append(String.format("%.2f", cart.getTotal()));
-	         cartArea.setText(sb.toString());
-	     }
-
-	     JScrollPane scrollPane = new JScrollPane(cartArea);
-	     add(scrollPane, BorderLayout.CENTER);
-
-	     JPanel buttonPanel = new JPanel(new GridLayout(2, 2, 10, 10));
-	     JButton payCard = new JButton("Pay with Card");
-	     JButton payVenmo = new JButton("Pay with Venmo");
-	     JButton payPayPal = new JButton("Pay with PayPal");
-	     JButton backBtn = new JButton("Back");
-
-	     
-	     payCard.addActionListener(e -> { new creditcard(account, parent, cart); dispose();});
-	     //add function
-	     //payVenmo.addActionListener(e -> { new venmo(account, null); dispose();});
-	     //payPayPal.addActionListener(e -> { new paypal(account, null); dispose();});
-
-	     
-	     backBtn.addActionListener(e -> {
-	         dispose();
-	         parent.setVisible(true);
-	     });
-
-	     buttonPanel.add(payCard);
-	     buttonPanel.add(payVenmo);
-	     buttonPanel.add(payPayPal);
-	     buttonPanel.add(backBtn);
-	     add(buttonPanel, BorderLayout.SOUTH);
-
-	     setVisible(true);
-	 }
-	}
-
-class adminpage extends JFrame {
-    Account account;
-    DefaultListModel<Movie> movieListModel = new DefaultListModel<>();
-    JList<Movie> movieList;
-
-    public adminpage(Account account) {
-        this.account = account;
-
-        setTitle("Administative Options");
-        setSize(600, 400);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-
-
-        movieList = new JList<>(movieListModel);
-        for (Movie m : Database.movies) {
-            movieListModel.addElement(m);
-
-        add(new JScrollPane(movieList), BorderLayout.CENTER);
-        
-        //create buttons and panel
-        JPanel bottomPanel = new JPanel();
-        JButton Home = new JButton("Home");
-        JButton addmovie = new JButton("Add a Movie");
-        JButton deleteMovie = new JButton("Remove a movie");
-        
-        //event handler
-        Home.addActionListener(e -> { new BrowseMenu(account, null); dispose();});
-        addmovie.addActionListener(e ->  {new addMovie(account); dispose(); });
-        deleteMovie.addActionListener(e -> {
-        	Movie selected = movieList.getSelectedValue();
-            if (selected != null) {
-                Database.movies.remove(selected);
-                new adminpage(account);
-                dispose();
-                
-            }
-            });
-        //but buttons on bottom panel
-        bottomPanel.add(Home);
-        bottomPanel.add(addmovie);
-        bottomPanel.add(deleteMovie);
-        add(bottomPanel, BorderLayout.SOUTH);
-
-            }
-        setVisible(true);
-    }
-}
-
-class addMovie extends JFrame {
-    Account account;
-    DefaultListModel<Movie> movieListModel = new DefaultListModel<>();
-    JList<Movie> movieList;
-    JTextField title;
-    JTextField director;
-    JTextField cast;
-    JTextField rating;
-    boolean current;
-    JTextField reviews;
-    JTextField summary;
-    JTextField runtime;
-    JTextField price;
-    JTextField movieid;
-    JTextField time;
-    JTextField ashowtimes;
-    JTextField lshowtimes;
-    JTextField leashowtimes;
-    JTextField pshowtimes;
-    JTextField sshowtimes;
-    JTextField abshowtimes;
-
-
-
-
-    public int getInt(JTextField field) {//method to get int from text field
-	    return Integer.parseInt(field.getText());
-	}
-    public float getFloat(JTextField reviews) {//method to get float from text field
-	    return Float.parseFloat(reviews.getText());
-	}
-
     
-    //add image somehow
-
-    public addMovie(Account account) {
-        this.account = account;
-
-        setTitle("Please Enter Movie Details");
-        setTitle("Movie App Login");
-        setSize(600, 400);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setLayout(new BorderLayout());
-
-        ///input text boxes
-        JPanel panel = new JPanel(new GridLayout(18, 2));
-        panel.add(new JLabel("Title:"));
-        title = new JTextField();
-        panel.add(title);
-        
-        panel.add(new JLabel("Director:"));
-        director = new JTextField();
-        panel.add(director);
-        
-        panel.add(new JLabel("Movie ID:"));
-        movieid = new JTextField();
-        panel.add(movieid);
-        
-        panel.add(new JLabel("Cast:"));
-        cast = new JTextField();
-        panel.add(cast);
-        
-        panel.add(new JLabel("MPA Rating:"));
-        rating = new JTextField();
-        panel.add(rating);
-        
-        panel.add(new JLabel("Customer Review(s):"));
-        reviews = new JTextField();
-        panel.add(reviews);
-        
-        panel.add(new JLabel("Summary:"));
-        summary = new JTextField();
-        panel.add(summary);
-        
-        panel.add(new JLabel("Runtime:"));
-        runtime = new JTextField();
-        panel.add(runtime);
-        
-        panel.add(new JLabel("Ticket Cost:"));
-        price = new JTextField();
-        panel.add(price);
-        
-        panel.add(new JLabel("Run Time:"));
-        time = new JTextField();
-        panel.add(time);
-        
-        
-        
-        
-
-
-        JCheckBox checkbox = new JCheckBox("Is this movie currently playing?");
-        checkbox.addActionListener(e -> {
-            if (checkbox.isSelected()) {
-                current=true;
-            } else {
-            	current=false;
-            }
-        });
-        if(checkbox != null ) {
-        	panel.add(new JLabel("Please enter showtimes for each location seperated by a ','"));
-        	panel.add(new JLabel("A show times:"));
-        	ashowtimes  = new JTextField();
-            panel.add(ashowtimes);
-            
-            panel.add(new JLabel("Lubbock show times:"));
-            lshowtimes = new JTextField();
-            panel.add(lshowtimes);
-            
-            panel.add(new JLabel("Leaveland show times:"));
-            leashowtimes = new JTextField();
-            panel.add(leashowtimes);
-            
-            panel.add(new JLabel("Plainsview show times:"));
-            pshowtimes = new JTextField();
-            panel.add(pshowtimes);
-            
-            panel.add(new JLabel("Snyder show times:"));
-            sshowtimes = new JTextField();
-            panel.add(sshowtimes);
-            
-            panel.add(new JLabel("Abiline show times:"));
-            abshowtimes = new JTextField();
-            panel.add(abshowtimes);
-            
-        } else {
-        	ashowtimes=null;
-        	lshowtimes=null;
-        	leashowtimes=null;
-        	pshowtimes=null;
-        	sshowtimes=null;
-        	abshowtimes=null;
+    @PostMapping("/delete-movie")
+    public String deleteMovie(@RequestParam("movieId") int movieId, HttpSession session) {
+        if (session.getAttribute("adminId") == null) {
+            return "redirect:/home";
         }
-        panel.add(checkbox);
-        
-        
-        add(panel, BorderLayout.CENTER);
-        setVisible(true);
-        
-       
-        
-        //add panel and bottoms
-        JPanel bottomPanel = new JPanel();
-        JButton Home = new JButton("Home");
-        JButton addmovie = new JButton("Add  Movie");
-        
-        //event handler
-        Home.addActionListener(e ->  {new BrowseMenu(account, null); dispose();});
-        addmovie.addActionListener(e -> {addmovie();dispose();new adminpage(account); });
-
-        //bottom panel buttons
-        bottomPanel.add(Home);
-        bottomPanel.add(addmovie);
-        
-
-        add(bottomPanel, BorderLayout.SOUTH);
-        setVisible(true);
-
-            
-        }
-        private void addmovie() {//creates movie
-            String titlef = title.getText();
-            String directorf = director.getText();
-            String castf = cast.getText();
-            String ratingf = rating.getText();
-            String summaryf = summary.getText();
-            float reviewsf = getFloat(reviews);
-            String runtimef = runtime.getText();
-            int movieidf = getInt(movieid);
-            float costf = getFloat(price);
-            String timef = time.getText();
-            String ashowtimesf = ashowtimes.getText();
-            String lshowtimesf = lshowtimes.getText();
-            String leashowtimesf = leashowtimes.getText();
-            String pshowtimesf = pshowtimes.getText();
-            String sshowtimesf = sshowtimes.getText();
-            String abshowtimesf = abshowtimes.getText();
-
-            
-            boolean currentf=current;
-            if(ashowtimesf=="") {
-            	ashowtimesf=null;
-            }
-            if(lshowtimesf=="") {
-            	lshowtimesf=null;
-            }
-            if(abshowtimesf=="") {
-            	abshowtimesf=null;
-            }
-            if(leashowtimesf=="") {
-            	leashowtimesf=null;
-            }
-            if(pshowtimesf=="") {
-            	pshowtimesf=null;
-            }
-            if(sshowtimesf=="") {
-            	sshowtimesf=null;
-            }
-
-            
-          //puts movie in display
-            Database.movies.add(new Movie(titlef,directorf,movieidf ,reviewsf,costf,currentf,ashowtimesf, lshowtimesf,leashowtimesf,pshowtimesf,sshowtimesf,abshowtimesf  ));
-
-
-        }
-
-}
-
-
-class comingSoon extends JFrame {
-    protected JPanel moviePanel;
-
-    public comingSoon(Account account, JFrame parent) {
-        setTitle("Movies Coming Soon");
-        setSize(500, 400);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setLayout(new BorderLayout());
-
-        moviePanel = new JPanel();
-        moviePanel.setLayout(new BoxLayout(moviePanel, BoxLayout.Y_AXIS));
-        JScrollPane scrollPane = new JScrollPane(moviePanel);
-        add(scrollPane, BorderLayout.CENTER);
-
-        for (Movie m : Database.movies) {
-            if (!m.isCurrent()) {
-                JPanel mPanel = new JPanel();
-                mPanel.setLayout(new BoxLayout(mPanel, BoxLayout.Y_AXIS));
-                JButton mb = new JButton(m.toString());
-                mPanel.add(mb);
-                moviePanel.add(mPanel);
-                mb.addActionListener(e -> {
-                    dispose();
-                    new moviePage(account, parent, m);
-                });
-            }
-        }
-        JButton backBtn = new JButton("Back");
-        backBtn.addActionListener(e -> {
-            dispose();
-            parent.setVisible(true);
-        });
-        add(backBtn, BorderLayout.SOUTH);
-
-        revalidate();
-        repaint();
-        setVisible(true);
+        Database.movies.removeIf(movie -> movie.getMovieId() == movieId);
+        Database.saveMovies();
+        return "redirect:/admin/home";
     }
-}
-
-
-class moviePage extends JFrame {
-    protected JPanel moviePanel;
-
-    public moviePage(Account account, JFrame parent, Movie m) {
-        setTitle("Movie Info");
-        setSize(500, 600);  // a little taller to fit showtimes
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setLayout(new BorderLayout());
-
-        moviePanel = new JPanel();
-        moviePanel.setLayout(new BoxLayout(moviePanel, BoxLayout.Y_AXIS));
-        JScrollPane scrollPane = new JScrollPane(moviePanel);
-        add(scrollPane, BorderLayout.CENTER);
-
-        JTextArea movieInfoArea = new JTextArea(m.getMovieInfo());
-        movieInfoArea.setEditable(false);
-        moviePanel.add(movieInfoArea);
-
-        if (m.current) {
-            moviePanel.add(new JLabel("Showtimes at Plainsview:"));
-            if (m.pshowtimes != null) {
-                String[] times = m.pshowtimes.split(",");
-                for (String time : times) {
-                    String trimmedTime = time.trim();
-                    JButton showtimeBtn = new JButton(trimmedTime);
-                    showtimeBtn.addActionListener(e -> {
-                        String ticketCountStr = JOptionPane.showInputDialog(this, "How many tickets for " + trimmedTime + "?");
-                        try {
-                            int ticketCount = Integer.parseInt(ticketCountStr);
-                            if (ticketCount > 0) {
-                                for (int i = 0; i < ticketCount; i++) {
-                                    account.getCart().addToCart(m, trimmedTime, "Plainsview");
-                                }
-                                JOptionPane.showMessageDialog(this, ticketCount + " ticket(s) added to cart for " + trimmedTime);
-                            } else {
-                                JOptionPane.showMessageDialog(this, "Please enter a number greater than 0.");
-                            }
-                        } catch (NumberFormatException ex) {
-                            JOptionPane.showMessageDialog(this, "Invalid number entered.");
-                        }
-                    });
-                    moviePanel.add(showtimeBtn);
-                }
-            } else {
-                moviePanel.add(new JLabel("No showtimes available at Plainsview."));
+    
+    @GetMapping("/edit-movie")
+    public String showEditForm(@RequestParam("movieId") int movieId, Model model, HttpSession session) {
+        if (session.getAttribute("adminId") == null) {
+            return "redirect:/home";
+        }
+        for (Movie movie : Database.movies) {
+            if (movie.getMovieId() == movieId) {
+                model.addAttribute("movie", movie);
+                return "edit-movie";
             }
-            moviePanel.add(new JLabel("Showtimes at Lubbock:"));
-            if (m.lshowtimes != null) {
-                String[] times = m.lshowtimes.split(",");
-                for (String time : times) {
-                    String trimmedTime = time.trim();
-                    JButton showtimeBtn = new JButton(trimmedTime);
-                    showtimeBtn.addActionListener(e -> {
-                        String ticketCountStr = JOptionPane.showInputDialog(this, "How many tickets for " + trimmedTime + "?");
-                        try {
-                            int ticketCount = Integer.parseInt(ticketCountStr);
-                            if (ticketCount > 0) {
-                                for (int i = 0; i < ticketCount; i++) {
-                                    account.getCart().addToCart(m, trimmedTime,"Lubbock");
-                                }
-                                JOptionPane.showMessageDialog(this, ticketCount + " ticket(s) added to cart for " + trimmedTime);
-                            } else {
-                                JOptionPane.showMessageDialog(this, "Please enter a number greater than 0.");
-                            }
-                        } catch (NumberFormatException ex) {
-                            JOptionPane.showMessageDialog(this, "Invalid number entered.");
-                        }
-                    });
-                    moviePanel.add(showtimeBtn);
-                }
-            } else {
-                moviePanel.add(new JLabel("No showtimes available at Lubbock."));
-            }
-            moviePanel.add(new JLabel("Showtimes at Abiline:"));
-            if (m.leashowtimes != null) {
-                String[] times = m.abshowtimes.split(",");
-                for (String time : times) {
-                    String trimmedTime = time.trim();
-                    JButton showtimeBtn = new JButton(trimmedTime);
-                    showtimeBtn.addActionListener(e -> {
-                        String ticketCountStr = JOptionPane.showInputDialog(this, "How many tickets for " + trimmedTime + "?");
-                        try {
-                            int ticketCount = Integer.parseInt(ticketCountStr);
-                            if (ticketCount > 0) {
-                                for (int i = 0; i < ticketCount; i++) {
-                                    account.getCart().addToCart(m, trimmedTime,"Abiline");
-                                }
-                                JOptionPane.showMessageDialog(this, ticketCount + " ticket(s) added to cart for " + trimmedTime);
-                            } else {
-                                JOptionPane.showMessageDialog(this, "Please enter a number greater than 0.");
-                            }
-                        } catch (NumberFormatException ex) {
-                            JOptionPane.showMessageDialog(this, "Invalid number entered.");
-                        }
-                    });
-                    moviePanel.add(showtimeBtn);
-                }
-            } else {
-                moviePanel.add(new JLabel("No showtimes available at Lubbock."));
-            }
-            moviePanel.add(new JLabel("Showtimes at Snyder:"));
-            if (m.sshowtimes != null) {
-                String[] times = m.sshowtimes.split(",");
-                for (String time : times) {
-                    String trimmedTime = time.trim();
-                    JButton showtimeBtn = new JButton(trimmedTime);
-                    showtimeBtn.addActionListener(e -> {
-                        String ticketCountStr = JOptionPane.showInputDialog(this, "How many tickets for " + trimmedTime + "?");
-                        try {
-                            int ticketCount = Integer.parseInt(ticketCountStr);
-                            if (ticketCount > 0) {
-                                for (int i = 0; i < ticketCount; i++) {
-                                    account.getCart().addToCart(m, trimmedTime,"Snyder");
-                                }
-                                JOptionPane.showMessageDialog(this, ticketCount + " ticket(s) added to cart for " + trimmedTime);
-                            } else {
-                                JOptionPane.showMessageDialog(this, "Please enter a number greater than 0.");
-                            }
-                        } catch (NumberFormatException ex) {
-                            JOptionPane.showMessageDialog(this, "Invalid number entered.");
-                        }
-                    });
-                    moviePanel.add(showtimeBtn);
-                }
-            } else {
-                moviePanel.add(new JLabel("No showtimes available at Snyder."));
-            }
-            moviePanel.add(new JLabel("Showtimes at Armarillo:"));
-            if (m.ashowtimes != null) {
-                String[] times = m.ashowtimes.split(",");
-                for (String time : times) {
-                    String trimmedTime = time.trim();
-                    JButton showtimeBtn = new JButton(trimmedTime);
-                    showtimeBtn.addActionListener(e -> {
-                        String ticketCountStr = JOptionPane.showInputDialog(this, "How many tickets for " + trimmedTime + "?");
-                        try {
-                            int ticketCount = Integer.parseInt(ticketCountStr);
-                            if (ticketCount > 0) {
-                                for (int i = 0; i < ticketCount; i++) {
-                                    account.getCart().addToCart(m, trimmedTime,"Armarillo");
-                                }
-                                JOptionPane.showMessageDialog(this, ticketCount + " ticket(s) added to cart for " + trimmedTime);
-                            } else {
-                                JOptionPane.showMessageDialog(this, "Please enter a number greater than 0.");
-                            }
-                        } catch (NumberFormatException ex) {
-                            JOptionPane.showMessageDialog(this, "Invalid number entered.");
-                        }
-                    });
-                    moviePanel.add(showtimeBtn);
-                }
-            } else {
-                moviePanel.add(new JLabel("No showtimes available at Armarillo."));
-            }
-            moviePanel.add(new JLabel("Showtimes at Levalend:"));
-            if (m.leashowtimes != null) {
-                String[] times = m.leashowtimes.split(",");
-                for (String time : times) {
-                    String trimmedTime = time.trim();
-                    JButton showtimeBtn = new JButton(trimmedTime);
-                    showtimeBtn.addActionListener(e -> {
-                        String ticketCountStr = JOptionPane.showInputDialog(this, "How many tickets for " + trimmedTime + "?");
-                        try {
-                            int ticketCount = Integer.parseInt(ticketCountStr);
-                            if (ticketCount > 0) {
-                                for (int i = 0; i < ticketCount; i++) {
-                                    account.getCart().addToCart(m, trimmedTime,"Levalend");
-                                }
-                                JOptionPane.showMessageDialog(this, ticketCount + " ticket(s) added to cart for " + trimmedTime);
-                            } else {
-                                JOptionPane.showMessageDialog(this, "Please enter a number greater than 0.");
-                            }
-                        } catch (NumberFormatException ex) {
-                            JOptionPane.showMessageDialog(this, "Invalid number entered.");
-                        }
-                    });
-                    moviePanel.add(showtimeBtn);
-                }
-            } else {
-                moviePanel.add(new JLabel("No showtimes available at Levalend."));
-            }
-            
+        }
+        return "redirect:/admin/home";
+    }
+    
+    @PostMapping("/edit-movie")
+    public String editMovie(@RequestParam("title") String title,
+                            @RequestParam("director") String director,
+                            @RequestParam("showtime") String showtime,
+                            @RequestParam("location") String location,
+                            @RequestParam("imgUrl") String imgUrl,
+                            @RequestParam("movieId") int movieId,
+                            @RequestParam("avgReview") float avgReview,
+                            @RequestParam("cost") float cost,
+                            HttpSession session) {
+
+        if (session.getAttribute("adminId") == null) {
+            return "redirect:/home";
         }
 
-        JButton backBtn = new JButton("Back");
-        backBtn.addActionListener(e -> {
-            dispose();
-            parent.setVisible(true);
-        });
-        add(backBtn, BorderLayout.SOUTH);
-
-        revalidate();
-        repaint();
-        setVisible(true);
-    }
-}
-
-
-
-class creditcard extends JFrame {
-	JTextField CCN;
-	JTextField zip;
-	JTextField expiration;
-	JTextField name;
-	JTextField CVV;
-	
-    JPanel panel = new JPanel(new GridLayout(25, 2));
-
-    public creditcard(Account account, JFrame parent,Cart cart) {
-        setTitle("Please enter payment details");
-        setSize(500, 400);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setLayout(new BorderLayout());
-
-        panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        JScrollPane scrollPane = new JScrollPane(panel);
-        add(scrollPane, BorderLayout.CENTER);
-        
-        panel.add(new JLabel("Full Name:"));
-        name = new JTextField();
-        panel.add(name);
-
-        panel.add(new JLabel("Credit Card Number:"));
-        CCN = new JTextField();
-        panel.add(CCN);
-        
-        panel.add(new JLabel("CVV:"));
-        CVV = new JTextField();
-        panel.add(CVV);
-        
-        panel.add(new JLabel("Zipcode:"));
-        zip = new JTextField();
-        panel.add(zip);
-        
-        panel.add(new JLabel("Experation Date:"));
-        expiration = new JTextField();
-        panel.add(expiration);
-        
-        
-        
-        JButton backBtn = new JButton("Back");
-        backBtn.addActionListener(e -> {
-            dispose();
-            parent.setVisible(true);
-        });
-        
-        JButton submit = new JButton("Sumbit Payment");
-        submit.addActionListener(e -> {
-            dispose();
-            new paymentcomplete(account, parent, cart);
-            
-        });
-        JPanel botpan = new JPanel();
-        botpan.add(backBtn);
-        botpan.add(submit);
-        add(botpan, BorderLayout.SOUTH);
-
-        revalidate();
-        repaint();
-        setVisible(true);
-    }
-}
-
-
-
-
-
-class paymentcomplete extends JFrame {
-    protected JPanel moviePanel;
-
-    public paymentcomplete(Account account, JFrame parent,Cart cart) {
-        setTitle("Payment recived");
-        setSize(500, 400);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setLayout(new BorderLayout());
-
-        moviePanel = new JPanel();
-        moviePanel.setLayout(new BoxLayout(moviePanel, BoxLayout.Y_AXIS));
-        JScrollPane scrollPane = new JScrollPane(moviePanel);
-        add(scrollPane, BorderLayout.CENTER);
-
-        
-        
-        JButton viewti = new JButton("View tickets");
-        viewti.addActionListener(e -> {
-        	account.addTicket(cart);
-            dispose();
-            new ticketscreen(account, parent);
-        });
-        
-        JButton backBtn = new JButton("Return Home");
-        backBtn.addActionListener(e -> {
-        	account.addTicket(cart);
-            dispose();
-            new BrowseMenu(account, parent);
-        });
-        JPanel botpan = new JPanel();
-        botpan.add(backBtn);
-        botpan.add(viewti);
-
-        add(botpan, BorderLayout.SOUTH);
-        
-
-        revalidate();
-        repaint();
-        setVisible(true);
-    }
-}
-
-class ticketscreen extends JFrame {
-    protected JPanel moviePanel;
-
-    public ticketscreen(Account account, JFrame parent) {
-        setTitle("Tickets Purchased");
-        setSize(500, 400);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setLayout(new BorderLayout());
-
-        moviePanel = new JPanel();
-        moviePanel.setLayout(new BoxLayout(moviePanel, BoxLayout.Y_AXIS));
-        JScrollPane scrollPane = new JScrollPane(moviePanel);
-        add(scrollPane, BorderLayout.CENTER);
-
-        // Make sure tickets list is initialized
-        if (account.tickets != null && !account.tickets.isEmpty()) {
-            for (MovieTicket movie : account.tickets) {
-                String text = movie + " Tickets";
-                JButton movieb = new JButton(text);
-                moviePanel.add(movieb);
+        for (Movie movie : Database.movies) {
+            if (movie.getMovieId() == movieId) {
+                movie.setTitle(title);
+                movie.setDirector(director);
+                movie.setShowtime(showtime);
+                movie.setLocation(location);
+                movie.setImgUrl(imgUrl);
+                movie.setAvgReview(avgReview);
+                movie.setCost(cost);
+                break;
             }
-        } else {
-            JLabel empty = new JLabel("No Recent Purchases");
-            empty.setAlignmentX(Component.CENTER_ALIGNMENT); // Center it
-            moviePanel.add(empty);
+        }
+        Database.saveMovies();
+        return "redirect:/admin/home";
+    }
+    
+    @PostMapping("/delete-account")
+    public String deleteAccount(@RequestParam("accountId") String accountId, HttpSession session) {
+        if (session.getAttribute("adminId") == null) {
+            return "redirect:/home";
         }
 
-        JButton backBtn = new JButton("Return Home");
-        backBtn.addActionListener(e -> {
-            dispose();
-            new BrowseMenu(account, parent);
-        });
-        JPanel botpan = new JPanel();
-        botpan.add(backBtn);
-        add(botpan, BorderLayout.SOUTH);
-
-        // FORCE layout refresh
-        moviePanel.revalidate();
-        moviePanel.repaint();
-        revalidate();
-        repaint();
-        setVisible(true);
+        Database.accounts.remove(accountId);
+        Database.carts.remove(accountId); 
+        Database.saveAccounts();
+        Database.saveCarts();
+        
+        return "redirect:/admin/home";
     }
 }
