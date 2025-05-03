@@ -1,0 +1,697 @@
+                                                                                                            Admin Controller
+package com.MBSTeam4.controller;
+
+import com.MBSTeam4.model.Database;
+import com.MBSTeam4.model.Movie;
+import com.MBSTeam4.model.Ticket;
+import jakarta.servlet.http.HttpSession;
+import org.springframework.ui.Model;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+
+import java.io.File;
+import java.util.*;
+
+@Controller
+@RequestMapping("/admin")
+public class AdminController {
+
+    @GetMapping("/home")
+    public String homePage(Model model, HttpSession session) {
+        String adminId = (String) session.getAttribute("adminId");
+
+        if (adminId == null) {
+            return "redirect:/home";
+        } else {
+            model.addAttribute("username", adminId);
+            model.addAttribute("movies", Database.movies);
+            model.addAttribute("locations", Database.locations);
+            model.addAttribute("accounts", Database.accounts.values());
+        }
+
+        return "admin-home"; 
+    }
+
+    @PostMapping("/add-movie")
+    public String addMovie(@RequestParam("title") String title, 
+                           @RequestParam("director") String director,
+                           @RequestParam("showtime") String showtime, 
+                           @RequestParam("locations") List<String> locations,
+                           @RequestParam("imgUrl") String imgUrl,
+                           @RequestParam("movieId") int movieId, 
+                           @RequestParam("avgReview") float avgReview, 
+                           @RequestParam("cost") float cost,
+                           Model model, HttpSession session) {
+
+        if (session.getAttribute("adminId") == null) {
+            return "redirect:/home";
+        }
+
+        int idIncrement = 0;
+        for (String loc : locations) {
+            Movie newMovie = new Movie(
+                title,
+                director,
+                showtime,
+                loc,
+                imgUrl,
+                movieId + idIncrement,
+                avgReview,
+                cost
+            );
+            Database.movies.add(newMovie);
+            idIncrement++;
+        }
+
+        // Save updated movie list to file
+        Database.saveMovies();
+        model.addAttribute("success", "Movie added successfully to selected locations!");
+        return "redirect:/admin/home";
+    }
+
+    @PostMapping("/delete-movie")
+    public String deleteMovie(@RequestParam("movieId") int movieId, HttpSession session) {
+        if (session.getAttribute("adminId") == null) {
+            return "redirect:/home";
+        }
+        Database.movies.removeIf(movie -> movie.getMovieId() == movieId);
+        Database.saveMovies();  // Ensure the updated movie list is saved to the file
+        return "redirect:/admin/home";
+    }
+
+    @GetMapping("/edit-movie")
+    public String showEditForm(@RequestParam("movieId") int movieId, Model model, HttpSession session) {
+        if (session.getAttribute("adminId") == null) {
+            return "redirect:/home";
+        }
+        for (Movie movie : Database.movies) {
+            if (movie.getMovieId() == movieId) {
+                model.addAttribute("movie", movie);
+                return "edit-movie";
+            }
+        }
+        return "redirect:/admin/home";
+    }
+
+    @PostMapping("/edit-movie")
+    public String editMovie(@RequestParam("title") String title,
+                            @RequestParam("director") String director,
+                            @RequestParam("showtime") String showtime,
+                            @RequestParam("location") String location,
+                            @RequestParam("imgUrl") String imgUrl,
+                            @RequestParam("movieId") int movieId,
+                            @RequestParam("avgReview") float avgReview,
+                            @RequestParam("cost") float cost,
+                            HttpSession session) {
+
+        if (session.getAttribute("adminId") == null) {
+            return "redirect:/home";
+        }
+
+        for (Movie movie : Database.movies) {
+            if (movie.getMovieId() == movieId) {
+                movie.setTitle(title);
+                movie.setDirector(director);
+                movie.setShowtime(showtime);
+                movie.setLocation(location);
+                movie.setImgUrl(imgUrl);
+                movie.setAvgReview(avgReview);
+                movie.setCost(cost);
+                break;
+            }
+        }
+
+        // Save the updated movie list to movies.dat
+        Database.saveMovies();
+        return "redirect:/admin/home";
+    }
+
+    @PostMapping("/delete-account")
+    public String deleteAccount(@RequestParam("accountId") String accountId, HttpSession session) {
+        if (session.getAttribute("adminId") == null) {
+            return "redirect:/home";
+        }
+
+        Database.accounts.remove(accountId);
+        Database.carts.remove(accountId); 
+        Database.saveAccounts();
+        Database.saveCarts();
+
+        return "redirect:/admin/home";
+    }
+
+    @GetMapping("/all-tickets")
+    public String viewAllTickets(Model model, HttpSession session) {
+        if (session.getAttribute("adminId") == null) {
+            return "redirect:/home";
+        }
+
+        List<Map<String, Object>> allTickets = new ArrayList<>();
+
+        for (Map.Entry<String, List<Ticket>> entry : Database.tickets.entrySet()) {
+            String userId = entry.getKey();
+            for (Ticket ticket : entry.getValue()) {
+                Map<String, Object> ticketMap = new HashMap<>();
+                ticketMap.put("userId", userId);
+                ticketMap.put("ticket", ticket);
+
+                // Find the corresponding movie for this ticket
+                for (Movie movie : Database.movies) {
+                    if (ticket.getQrcode().contains(String.valueOf(movie.getMovieId()))) {
+                        ticketMap.put("movie", movie);
+                        break;
+                    }
+                }
+
+                allTickets.add(ticketMap);
+            }
+        }
+
+        model.addAttribute("allTickets", allTickets);
+        model.addAttribute("username", session.getAttribute("adminId"));
+        return "admin-tickets"; // Name of the Thymeleaf template for viewing tickets
+    }
+
+    @PostMapping("/invalidate-ticket")
+    public String invalidateTicket(@RequestParam String userId, @RequestParam String qrcode, HttpSession session) {
+        if (session.getAttribute("adminId") == null) {
+            return "redirect:/home";
+        }
+
+        List<Ticket> userTickets = Database.tickets.get(userId);
+        if (userTickets != null) {
+            for (Ticket ticket : userTickets) {
+                if (ticket.getQrcode().equals(qrcode)) {
+                    ticket.setValidity(false);
+
+                    //also remove corresponding qrcodes
+                    File qrCodeFile = new File("src/main/resources/static/qrcodes/" + qrcode + ".png");
+                    if (qrCodeFile.exists()) {
+                        qrCodeFile.delete();
+                    }
+                    break;
+                }
+            }
+            Database.saveTickets(); 
+        }
+        return "redirect:/admin/all-tickets";
+    }
+
+    @PostMapping("/update-ticket")
+    public String updateTicket(@RequestParam("userId") String userId,
+                               @RequestParam("qrcode") String qrcode,
+                               @RequestParam("movieTitle") String movieTitle,
+                               @RequestParam("showtime") String showtime,
+                               @RequestParam("location") String location,
+                               HttpSession session) {
+        // Check if admin is logged in
+        String adminId = (String) session.getAttribute("adminId");
+        if (adminId == null) {
+            // If admin is not logged in, redirect to login page
+            return "redirect:/login";
+        }
+
+        // Proceed with ticket update
+        for (Map.Entry<String, List<Ticket>> entry : Database.tickets.entrySet()) {
+            if (entry.getKey().equals(userId)) {
+                for (Ticket ticket : entry.getValue()) {
+                    if (ticket.getQrcode().equals(qrcode)) {
+                        Movie movie = ticket.getMovie();
+                        if (movie != null) {
+                            movie.setTitle(movieTitle);  // Set movie title
+                            movie.setShowtime(showtime); // Set showtime
+                            movie.setLocation(location); // Set location
+                        }
+                        Database.saveTickets();
+                        break;
+                    }
+                }
+            }
+        }
+
+        return "redirect:/admin/all-tickets"; // Redirect after successful update
+    }
+}
+
+
+
+
+
+
+                                                                                                                    Admin home html
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Movie Booking System</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f7f7f7;
+    }
+    h2 a {
+      text-decoration: none;
+      color: #333;
+    }
+    .top-right {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .section {
+      display: none;
+      margin-top: 20px;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .toggle-btn {
+      display: inline-block;
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      margin: 10px 0;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .toggle-btn:hover {
+      background-color: #0056b3;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+    input[type="text"], input[type="number"], select {
+      width: 100%;
+      padding: 6px;
+      margin-top: 4px;
+      margin-bottom: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box; 
+    }
+    button[type="submit"] {
+      background-color: #28a745;
+      color: white;
+      padding: 8px 14px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: background-color 0.3s;
+    }
+    button[type="submit"]:hover {
+      background-color: #218838;
+    }
+    form {
+      margin-bottom: 0;
+    }
+    .delete-btn {
+      background-color: #dc3545;
+      margin-left: 5px;
+    }
+    .delete-btn:hover {
+      background-color: #c82333;
+    }
+  </style>
+  </head>
+  <body>
+    <h2>
+      <a th:href="@{/admin/home}" 
+         style="text-decoration: none; color: inherit;" 
+         onmouseover="this.style.color='blue';" 
+         onmouseout="this.style.color='inherit';" 
+         title="Back to Home">
+         Movie Booking System
+      </a>
+    </h2>
+
+    <!-- Top-right section for admin -->
+    <div style="position: absolute; top: 10px; right: 20px; font-weight: bold; font-size: 14px;">
+      Welcome, <span th:text="${username}">Guest</span>
+      <!-- Logout form -->
+      <form th:action="@{/logout}" method="get">
+          <button type="submit">Logout</button>
+      </form>
+      
+      <!-- View All Tickets Link -->
+      <form th:action="@{/admin/all-tickets}" method="get">
+          <button type="submit">View All Tickets</button>
+      </form>
+    </div>
+
+<div style="margin-top: 60px;">
+
+<!-- === MOVIE TABLE === -->
+<button class="toggle-btn" onclick="toggleSection('movieTable')">Current Movies</button>
+<div id="movieTable" class="section">
+  <table>
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Director</th>
+        <th>Showtime</th>
+        <th>Location</th>
+        <th>Movie ID</th>
+        <th>Average Review</th>
+        <th>Cost</th>
+        <th>Image URL</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:each="movie : ${movies}">
+        <form th:action="@{/admin/edit-movie}" method="post">
+          <td><input type="text" name="title" th:value="${movie.title}" required></td>
+          <td><input type="text" name="director" th:value="${movie.director}" required></td>
+          <td><input type="text" name="showtime" th:value="${movie.showtime}" required></td>
+          <td>
+            <select name="location" required>
+              <option th:each="location : ${locations}" th:value="${location}" th:text="${location}" th:selected="${location == movie.location}"></option>
+            </select>
+          </td>
+          <td><input type="number" name="movieId" th:value="${movie.movieId}" readonly></td>
+          <td><input type="number" step="0.1" name="avgReview" th:value="${movie.avgReview}" required></td>
+          <td><input type="number" step="0.01" name="cost" th:value="${movie.cost}" required></td>
+          <td><input type="text" name="imgUrl" th:value="${movie.imgUrl}" required></td>
+          <td style="white-space: nowrap;">
+            <button type="submit">Save</button>
+        </form>
+        <form th:action="@{/admin/delete-movie}" method="post" onsubmit="return confirm('Delete this movie?');" style="display:inline;">
+          <input type="hidden" name="movieId" th:value="${movie.movieId}">
+          <button type="submit" class="delete-btn">Delete</button>
+        </form>
+          </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- === ADD MOVIE FORM === -->
+<button class="toggle-btn" onclick="toggleSection('addMovieForm')">Add New Movie</button>
+<div id="addMovieForm" class="section">
+  <form th:action="@{/admin/add-movie}" method="post">
+    <label>Title:</label>
+    <input type="text" name="title" required>
+    <label>Director:</label>
+    <input type="text" name="director" required>
+    <label>Showtime:</label>
+    <input type="text" name="showtime" required>
+    <label>Movie ID:</label>
+    <input type="number" name="movieId" required>
+    <label>Avg Review:</label>
+    <input type="number" step="0.1" name="avgReview" required>
+    <label>Cost:</label>
+    <input type="number" step="0.01" name="cost" required>
+    <label>Locations:</label>
+    <select name="locations" multiple required style="height: 120px;">
+      <option th:each="location : ${locations}" th:value="${location}" th:text="${location}"></option>
+    </select>
+    <label>Image URL:</label>
+    <input type="text" name="imgUrl" required>
+    <br>
+    <button type="submit" style="margin-top: 10px;">Add Movie</button>
+  </form>
+</div>
+
+
+<!-- === ACCOUNTS TABLE === -->
+<button class="toggle-btn" onclick="toggleSection('accountTable')">View Accounts</button>
+<div id="accountTable" class="section">
+  <table>
+    <thead>
+      <tr>
+        <th>Account ID</th>
+        <th>Username</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Location</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:each="account : ${accounts}">
+        <td th:text="${account.id}"></td>
+        <td th:text="${account.username}"></td>
+        <td th:text="${account.email}"></td>
+        <td th:text="${account.phone}"></td>
+        <td th:text="${account.location}"></td>
+        <td>
+          <form th:action="@{/admin/delete-account}" method="post" onsubmit="return confirm('Delete this account?');">
+            <input type="hidden" name="accountId" th:value="${account.id}">
+            <button type="submit" class="delete-btn">Delete</button>
+          </form>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+
+
+</div> <!-- End Main Div -->
+
+<!-- === TOGGLE SCRIPT === -->
+<script>
+function toggleSection(id) {
+  const section = document.getElementById(id);
+  if (section.style.display === "block") {
+    section.style.display = "none";
+  } else {
+    section.style.display = "block";
+  }
+}
+</script>
+
+</body>
+</html>
+
+
+
+
+
+                                                                                                        Admin tickets html
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>All Tickets - Admin</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f7f7f7;
+    }
+    h2 a {
+      text-decoration: none;
+      color: #333;
+    }
+    .top-right {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 30px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+    .invalidate-btn {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .invalidate-btn:hover {
+      background-color: #c82333;
+    }
+    .edit-btn {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .edit-btn:hover {
+      background-color: #0056b3;
+    }
+    .editable {
+      display: none;
+    }
+    .show-edit .editable {
+      display: inline-block;
+    }
+    .show-edit .view-only {
+      display: none;
+    }
+    .toggle-btn {
+      display: inline-block;
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      margin: 10px 0;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .toggle-btn:hover {
+      background-color: #0056b3;
+    }
+    .section {
+      display: none;
+      margin-top: 20px;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .logout-btn {
+      background-color: #28a745; /* Green background for logout */
+      color: white;
+      padding: 8px 14px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background-color 0.3s;
+    }
+    .logout-btn:hover {
+      background-color: #218838; /* Darker green on hover */
+    }
+  </style>
+</head>
+<body>
+  <h2>
+    <a th:href="@{/admin/home}" 
+       style="text-decoration: none; color: inherit;" 
+       onmouseover="this.style.color='blue';" 
+       onmouseout="this.style.color='inherit';" 
+       title="Back to Home">
+       Movie Booking System
+    </a>
+  </h2>
+
+  <div class="top-right">
+    Welcome, <span th:text="${username}">Guest</span>
+    <!-- Logout form -->
+    <form th:action="@{/logout}" method="get">
+        <button type="submit" class="logout-btn">Logout</button>
+    </form>
+  </div>
+
+  <div style="margin-top: 60px;"> 
+
+  <!-- === TICKET TABLE === -->
+  <button class="toggle-btn" onclick="toggleSection('ticketTable')">All User Tickets</button>
+  <div id="ticketTable" class="section">
+    <table>
+      <thead>
+        <tr>
+          <th>User ID</th>
+          <th>Movie Title</th>
+          <th>Showtime</th>
+          <th>Location</th>
+          <th>Status</th>
+          <th>QR Code</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="ticketView : ${allTickets}">
+          <td th:text="${ticketView.userId}">user1</td>
+
+          <!-- Movie Title (Editable) -->
+          <td class="movie-title">
+            <span class="view-only" th:text="${ticketView.movie.title}">Inception</span>
+            <input class="editable" type="text" name="movieTitle" th:value="${ticketView.movie.title}" />
+          </td>
+
+          <!-- Showtime (Editable) -->
+          <td class="showtime">
+            <span class="view-only" th:text="${ticketView.movie.showtime}">10:00 PM</span>
+            <input class="editable" type="text" name="showtime" th:value="${ticketView.movie.showtime}" />
+          </td>
+
+          <!-- Location (Editable) -->
+          <td class="location">
+            <span class="view-only" th:text="${ticketView.movie.location}">Theater 1</span>
+            <input class="editable" type="text" name="location" th:value="${ticketView.movie.location}" />
+          </td>
+
+          <td th:text="${ticketView.ticket.validity} ? 'Unused' : 'Used'">Status</td>
+          <td>
+            <img th:src="@{'/qrcodes/' + ${ticketView.ticket.qrcode} + '.png'}" alt="QR" width="80" />
+          </td>
+
+          <td>
+            <!-- Invalidate Button -->
+            <form th:action="@{/admin/invalidate-ticket}" method="post">
+              <input type="hidden" name="userId" th:value="${ticketView.userId}" />
+              <input type="hidden" name="qrcode" th:value="${ticketView.ticket.qrcode}" />
+              <button type="submit" class="invalidate-btn" 
+                      th:disabled="${!ticketView.ticket.validity}">
+                Invalidate
+              </button>
+            </form>
+
+            <!-- Save Button -->
+            <form th:action="@{/admin/update-ticket}" method="post" style="display:inline;">
+              <input type="hidden" name="userId" th:value="${ticketView.userId}" />
+              <input type="hidden" name="qrcode" th:value="${ticketView.ticket.qrcode}" />
+              <input class="editable" type="submit" value="Save Changes" />
+            </form>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  </div> <!-- End Main Div -->
+
+  <!-- === TOGGLE SCRIPT === -->
+  <script>
+    function toggleSection(id) {
+      const section = document.getElementById(id);
+      if (section.style.display === "block") {
+        section.style.display = "none";
+      } else {
+        section.style.display = "block";
+      }
+    }
+  </script>
+
+</body>
+</html>
